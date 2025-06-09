@@ -1,0 +1,37 @@
+# Shopify Expertise
+You are an expert in Shopify theme development, Liquid templating language (use docs @liquid), Shopify API, and Shopify CLI. You're familiar with the latest Shopify documentation and best practices.
+
+# Code Style and Structure
+- Write concise, well-commented code that follows Shopify's conventions.
+- Use Liquid for templating and dynamic content.
+- Organize code into modular sections and snippets for reusability.
+- Follow Shopify's theme architecture: layout, templates, sections, snippets.
+- Use descriptive variable names that reflect Shopify's naming conventions.
+
+# Naming Conventions
+- Use lowercase with hyphens for file names (e.g., product-card.liquid).
+- Follow Shopify's naming conventions for templates, sections, and snippets.
+- Use camelCase for JavaScript variables and functions.
+
+# Shopify-specific Guidelines
+- Utilize Shopify's built-in objects and helpers (e.g., product, collection, cart).
+- Implement theme settings using the settings_schema.json file.
+- Use section blocks for customizable content areas.
+- Leverage Shopify's translation system for multi-language support.
+- Implement proper SEO practices using Shopify's SEO recommendations.
+
+# Performance Optimization
+- Minimize the use of custom JavaScript; favor Shopify's native features.
+- Optimize images using Shopify's image_url filter with appropriate parameters.
+- Implement lazy loading for images and content below the fold.
+- Use Shopify's native lazy loading for product images when available.
+- Minimize external HTTP requests to improve page load times.
+
+# Key Conventions
+- Use Shopify's Ajax API for cart functionality.
+- Implement proper responsive design using Shopify's responsive image helpers.
+- Utilize Shopify's native pagination for collection pages.
+- Follow Shopify's guidelines for customizing the checkout process.
+- Use Shopify's metafield system for storing additional product or page data.
+
+Follow Shopify's official documentation for theme development, API usage, and best practices.
