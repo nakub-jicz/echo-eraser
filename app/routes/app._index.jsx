@@ -60,7 +60,7 @@ export default function Index() {
       document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
       document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
 
-      // Parallax effect on cards
+      // Enhanced parallax effect on cards
       const cards = document.querySelectorAll('.evergreen-card-interactive');
       cards.forEach(card => {
         const rect = card.getBoundingClientRect();
@@ -70,14 +70,41 @@ export default function Index() {
         const deltaX = (e.clientX - cardCenterX) / rect.width;
         const deltaY = (e.clientY - cardCenterY) / rect.height;
 
-        const maxTilt = 8;
-        const tiltX = deltaY * maxTilt;
-        const tiltY = deltaX * -maxTilt;
+        // Stats cards get special treatment
+        if (card.classList.contains('evergreen-stats-card')) {
+          const maxTilt = 4; // More subtle for stats cards
+          const tiltX = deltaY * maxTilt;
+          const tiltY = deltaX * -maxTilt;
 
-        if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) {
-          card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(20px)`;
+          // Mouse position relative to card for glow effect
+          const mouseXPercent = ((e.clientX - rect.left) / rect.width) * 100;
+          const mouseYPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+          if (Math.abs(deltaX) < 0.6 && Math.abs(deltaY) < 0.6) {
+            card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(10px)`;
+            card.style.setProperty('--mouse-x', `${mouseXPercent}%`);
+            card.style.setProperty('--mouse-y', `${mouseYPercent}%`);
+
+            // Enhanced glow on hover
+            const glowElement = card.querySelector('::before');
+            if (card.matches(':hover')) {
+              card.style.setProperty('--glow-opacity', '1');
+            }
+          } else {
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+            card.style.setProperty('--glow-opacity', '0');
+          }
         } else {
-          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+          // Other interactive cards
+          const maxTilt = 6;
+          const tiltX = deltaY * maxTilt;
+          const tiltY = deltaX * -maxTilt;
+
+          if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) {
+            card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(15px)`;
+          } else {
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+          }
         }
       });
     };
@@ -145,6 +172,7 @@ export default function Index() {
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
+            padding-bottom: 4rem;
           }
           
           /* Cursor following glow effect */
@@ -264,12 +292,12 @@ export default function Index() {
           }
           
           .evergreen-primary-button:hover {
-            transform: translateY(-4px) scale(1.05) !important;
-            box-shadow: 0 8px 25px 0 rgba(16, 185, 129, 0.4) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px 0 rgba(16, 185, 129, 0.3) !important;
           }
           
           .evergreen-primary-button:active {
-            transform: translateY(-2px) scale(1.02) !important;
+            transform: translateY(-1px) !important;
             transition: all 100ms ease !important;
           }
           
@@ -341,28 +369,224 @@ export default function Index() {
             box-shadow: -4px 8px 25px 0 rgba(16, 185, 129, 0.15);
           }
           
-          .evergreen-stats-card {
+          .evergreen-stats-card-wrapper {
+            position: relative;
+            cursor: pointer;
+            transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .evergreen-stats-content {
             text-align: center;
             position: relative;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #FAFBFB 100%);
+            border-radius: 12px;
+            overflow: hidden;
+          }
+          
+          .evergreen-stats-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(6, 182, 212, 0.03) 100%);
+            opacity: 0;
+            transition: opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            z-index: 1;
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-stats-content::before {
+            opacity: 1;
+          }
+          
+          .evergreen-stats-content::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+              45deg,
+              transparent 20%,
+              rgba(16, 185, 129, 0.15) 50%,
+              transparent 80%
+            );
+            transform: translateX(-150%) translateY(-150%) rotate(45deg);
+            transition: transform 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0;
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-stats-content::after {
+            transform: translateX(150%) translateY(150%) rotate(45deg);
+            opacity: 1;
+          }
+          
+          .evergreen-stats-content > * {
+            position: relative;
+            z-index: 3;
+          }
+          
+          .evergreen-stats-card-wrapper:hover {
+            transform: translateY(-3px);
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-stats-content {
+            background: linear-gradient(135deg, #FAFAFA 0%, #F9FAFB 100%);
+            box-shadow: 
+              0px 12px 25px -8px rgba(16, 185, 129, 0.15), 
+              0 4px 12px -2px rgba(17, 24, 39, 0.08),
+              0 0 0 1px rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+          }
+          
+          .evergreen-stats-card-wrapper .evergreen-stats-header {
+            margin-bottom: 16px;
+            opacity: 0.8;
+            transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-stats-header {
+            opacity: 1;
+            transform: translateY(-1px);
+          }
+          
+          .evergreen-stats-card-wrapper .evergreen-icon-wrapper {
+            width: 32px;
+            height: 32px;
+            transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-icon-wrapper {
+            transform: rotate(5deg) translateY(-1px);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+            box-shadow: 
+              0 4px 16px rgba(16, 185, 129, 0.2),
+              0 0 0 2px rgba(16, 185, 129, 0.08);
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-icon-wrapper svg {
+            filter: 
+              drop-shadow(0 0 4px rgba(16, 185, 129, 0.3))
+              brightness(1.05);
+          }
+          
+          .evergreen-stats-card-wrapper .evergreen-stats-footer {
+            margin-top: 16px;
+            opacity: 0.7;
+            transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-stats-footer {
+            opacity: 1;
+            transform: translateY(1px);
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-ripple {
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
           }
           
           .evergreen-stats-number {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 700;
-            background: linear-gradient(120deg, #10B981 0%, #06B6D4 100%);
+            background: linear-gradient(135deg, #10B981 0%, #06B6D4 50%, #10B981 100%);
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            line-height: 1.2;
-            margin: 16px 0 8px 0;
-            transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            line-height: 1;
+            margin: 0;
+            transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
+            animation: gradientShift 4s ease-in-out infinite;
+            letter-spacing: -0.01em;
           }
           
-          .evergreen-stats-card:hover .evergreen-stats-number {
-            transform: scale(1.1);
-            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+          @keyframes gradientShift {
+            0%, 100% { 
+              background-position: 0% 50%;
+              transform: perspective(500px) rotateY(0deg);
+            }
+            50% { 
+              background-position: 100% 50%;
+              transform: perspective(500px) rotateY(2deg);
+            }
           }
+          
+          .evergreen-stats-number::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 120%;
+            background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 50%;
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-stats-number {
+            transform: perspective(500px) rotateY(1deg);
+            filter: 
+              drop-shadow(0 0 6px rgba(16, 185, 129, 0.3))
+              drop-shadow(0 0 12px rgba(6, 182, 212, 0.2));
+            animation-duration: 2s;
+          }
+          
+          .evergreen-stats-card-wrapper:hover .evergreen-stats-number::before {
+            opacity: 0.7;
+            transform: translate(-50%, -50%);
+          }
+          
+          .evergreen-stats-number::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+            opacity: 0;
+            transition: opacity 300ms ease;
+            animation: numberShine 2s ease-in-out infinite;
+          }
+          
+          @keyframes numberShine {
+            0%, 100% { 
+              transform: translateX(-100%) skewX(-20deg);
+              opacity: 0;
+            }
+            50% { 
+              transform: translateX(100%) skewX(-20deg);
+              opacity: 0.6;
+            }
+          }
+          
+          .evergreen-stats-card:hover .evergreen-stats-number::after {
+            animation-duration: 0.8s;
+          }
+          
+
           
           .evergreen-progress-bar {
             background: #E5E7EB;
@@ -408,7 +632,6 @@ export default function Index() {
           }
           
           .evergreen-badge-success:hover {
-            transform: scale(1.05) !important;
             box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.25) !important;
           }
           
@@ -421,7 +644,6 @@ export default function Index() {
           }
           
           .evergreen-badge-info:hover {
-            transform: scale(1.05) !important;
             box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.25) !important;
           }
           
@@ -466,7 +688,7 @@ export default function Index() {
           }
           
           .evergreen-icon-wrapper:hover {
-            transform: scale(1.2) rotate(5deg);
+            transform: rotate(5deg);
           }
           
           .evergreen-icon-success svg {
@@ -562,6 +784,193 @@ export default function Index() {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
           }
+          
+
+          
+          /* Enhanced Empty State Styles */
+          .evergreen-empty-state-wrapper {
+            perspective: 1000px;
+          }
+          
+          .evergreen-empty-state-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #ECFDF5 50%, #FFFFFF 100%);
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .evergreen-empty-state-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #10B981, #06B6D4, #10B981);
+            border-radius: 14px;
+            z-index: -1;
+            animation: borderGlow 3s ease-in-out infinite;
+            opacity: 0;
+            transition: opacity 300ms ease;
+          }
+          
+          .evergreen-empty-state-card:hover::before {
+            opacity: 0.6;
+          }
+          
+          @keyframes borderGlow {
+            0%, 100% { 
+              background: linear-gradient(45deg, #10B981, #06B6D4, #10B981);
+              transform: rotate(0deg);
+            }
+            50% { 
+              background: linear-gradient(45deg, #06B6D4, #10B981, #06B6D4);
+              transform: rotate(180deg);
+            }
+          }
+          
+          .evergreen-empty-state-content {
+            text-align: center;
+            padding: 48px 32px;
+            position: relative;
+            z-index: 1;
+          }
+          
+          .evergreen-empty-state-icon {
+            margin-bottom: 24px;
+            position: relative;
+          }
+          
+          .evergreen-celebration-icon {
+            width: 80px !important;
+            height: 80px !important;
+            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.2);
+          }
+          
+          .evergreen-celebration-icon::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background: linear-gradient(45deg, #10B981, transparent, #06B6D4, transparent, #10B981);
+            border-radius: 50%;
+            z-index: -1;
+            animation: iconGlow 2s ease-in-out infinite;
+            opacity: 0;
+          }
+          
+          .evergreen-empty-state-card:hover .evergreen-celebration-icon::before {
+            opacity: 0.8;
+          }
+          
+          .evergreen-empty-state-card:hover .evergreen-celebration-icon {
+            transform: rotate(10deg);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+          }
+          
+          @keyframes iconGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+          }
+          
+          .evergreen-celebration-icon svg {
+            width: 40px !important;
+            height: 40px !important;
+            filter: drop-shadow(0 0 8px rgba(5, 150, 105, 0.5));
+          }
+          
+          .evergreen-empty-state-heading {
+            margin: 24px 0 16px 0;
+            background: linear-gradient(120deg, #1F2937 0%, #10B981 50%, #1F2937 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.75rem !important;
+            font-weight: 700 !important;
+            transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .evergreen-empty-state-card:hover .evergreen-empty-state-heading {
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.25));
+          }
+          
+          .evergreen-empty-state-description {
+            margin: 16px 0 32px 0;
+            font-size: 1.125rem !important;
+            line-height: 1.6;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          
+          .evergreen-empty-state-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 32px;
+          }
+          
+          /* Floating particles effect */
+          .evergreen-empty-state-card::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            width: 4px;
+            height: 4px;
+            background: #10B981;
+            border-radius: 50%;
+            box-shadow: 
+              40px 20px 0 #06B6D4,
+              80px 40px 0 #10B981,
+              120px 10px 0 #06B6D4,
+              160px 30px 0 #10B981,
+              200px 50px 0 #06B6D4,
+              240px 20px 0 #10B981,
+              280px 40px 0 #06B6D4,
+              320px 15px 0 #10B981;
+            animation: floatingParticles 6s ease-in-out infinite;
+            opacity: 0;
+            pointer-events: none;
+          }
+          
+          .evergreen-empty-state-card:hover::after {
+            opacity: 0.6;
+          }
+          
+          @keyframes floatingParticles {
+            0%, 100% { 
+              transform: translateY(0px) rotate(0deg);
+              opacity: 0.3;
+            }
+            25% { 
+              transform: translateY(-10px) rotate(90deg);
+              opacity: 0.6;
+            }
+            50% { 
+              transform: translateY(-5px) rotate(180deg);
+              opacity: 0.8;
+            }
+            75% { 
+              transform: translateY(-15px) rotate(270deg);
+              opacity: 0.4;
+            }
+          }
         `}
       </style>
 
@@ -644,116 +1053,119 @@ export default function Index() {
                 {/* Stats Overview */}
                 <Grid columns={{ xs: 1, sm: 2, md: 2, lg: 2, xl: 2 }}>
                   <Grid.Cell>
-                    <Card className="evergreen-card evergreen-card-interactive evergreen-stats-card evergreen-animation-entrance">
-                      <BlockStack gap="200">
-                        <InlineStack blockAlign="center" gap="200" align="center">
-                          <div className="evergreen-icon-wrapper evergreen-icon-warning">
-                            <Icon source={ProductIcon} tone="warning" />
+                    <div className="evergreen-stats-card-wrapper">
+                      <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
+                        <div className="evergreen-stats-content">
+                          <div className="evergreen-stats-header">
+                            <div className="evergreen-icon-wrapper evergreen-icon-warning">
+                              <Icon source={ProductIcon} tone="warning" />
+                            </div>
+                            <Text variant="bodyMd" as="p" className="evergreen-text-primary" fontWeight="semibold">
+                              Duplicates Found
+                            </Text>
                           </div>
-                          <Text variant="headingMd" as="h3" className="evergreen-text-primary">
-                            Duplicates Found
-                          </Text>
-                        </InlineStack>
-                        <div className="evergreen-stats-number">
-                          {stats.duplicatesFound}
+
+                          <div className="evergreen-stats-number">
+                            {stats.duplicatesFound}
+                          </div>
+
+                          <div className="evergreen-stats-footer">
+                            <Text variant="bodySm" as="p" className="evergreen-text-secondary">
+                              Products that may be duplicates
+                            </Text>
+                            {stats.duplicatesFound > 0 && (
+                              <div style={{ marginTop: '12px' }}>
+                                <Button
+                                  onClick={handleViewResults}
+                                  tone="critical"
+                                  variant="primary"
+                                  size="slim"
+                                  className="evergreen-ripple"
+                                >
+                                  Review Duplicates
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <Text variant="bodyMd" as="p" className="evergreen-text-secondary">
-                          Products that may be duplicates
-                        </Text>
-                        {stats.duplicatesFound > 0 && (
-                          <Button
-                            onClick={handleViewResults}
-                            tone="critical"
-                            variant="primary"
-                            className="evergreen-ripple"
-                          >
-                            Review Duplicates
-                          </Button>
-                        )}
-                      </BlockStack>
-                    </Card>
+                      </Card>
+                    </div>
                   </Grid.Cell>
 
                   <Grid.Cell>
-                    <Card className="evergreen-card evergreen-card-interactive evergreen-stats-card evergreen-animation-entrance">
-                      <BlockStack gap="200">
-                        <InlineStack blockAlign="center" gap="200" align="center">
-                          <div className="evergreen-icon-wrapper evergreen-icon-success">
-                            <Icon source={ChartVerticalIcon} tone="success" />
+                    <div className="evergreen-stats-card-wrapper">
+                      <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
+                        <div className="evergreen-stats-content">
+                          <div className="evergreen-stats-header">
+                            <div className="evergreen-icon-wrapper evergreen-icon-success">
+                              <Icon source={ChartVerticalIcon} tone="success" />
+                            </div>
+                            <Text variant="bodyMd" as="p" className="evergreen-text-primary" fontWeight="semibold">
+                              Products Scanned
+                            </Text>
                           </div>
-                          <Text variant="headingMd" as="h3" className="evergreen-text-primary">
-                            Products Scanned
-                          </Text>
-                        </InlineStack>
-                        <div className="evergreen-stats-number">
-                          {stats.productsScanned.toLocaleString()}
+
+                          <div className="evergreen-stats-number">
+                            {stats.productsScanned.toLocaleString()}
+                          </div>
+
+                          <div className="evergreen-stats-footer">
+                            <Text variant="bodySm" as="p" className="evergreen-text-secondary">
+                              Total products analyzed
+                            </Text>
+                            <div style={{ marginTop: '12px' }}>
+                              <Button
+                                onClick={handleStartScan}
+                                size="slim"
+                                className="evergreen-secondary-button evergreen-ripple"
+                              >
+                                Scan Again
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                        <Text variant="bodyMd" as="p" className="evergreen-text-secondary">
-                          Total products analyzed
-                        </Text>
-                        <Button
-                          onClick={handleStartScan}
-                          className="evergreen-secondary-button evergreen-ripple"
-                        >
-                          Scan Again
-                        </Button>
-                      </BlockStack>
-                    </Card>
+                      </Card>
+                    </div>
                   </Grid.Cell>
                 </Grid>
 
                 {/* Quick Actions */}
-                <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
-                  <BlockStack gap="300">
-                    <Text variant="headingMd" as="h3" className="evergreen-text-primary">
-                      Quick Actions
-                    </Text>
-                    <InlineStack gap="300">
-                      <Button
-                        onClick={handleStartScan}
-                        className="evergreen-primary-button evergreen-ripple evergreen-magnetic"
-                        variant="primary"
-                      >
-                        Start New Scan
-                      </Button>
-                      <Button
-                        onClick={handleViewResults}
-                        disabled={stats.duplicatesFound === 0}
-                        className="evergreen-secondary-button evergreen-ripple"
-                      >
-                        View Results
-                      </Button>
-                      <Button
-                        onClick={() => navigate("/app/settings")}
-                        variant="plain"
-                        className="evergreen-magnetic"
-                      >
-                        Configure Settings
-                      </Button>
-                    </InlineStack>
-                  </BlockStack>
-                </Card>
+
 
                 {/* Empty State for No Duplicates */}
                 {stats.duplicatesFound === 0 && stats.productsScanned > 0 && (
-                  <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
-                    <EmptyState
-                      heading="No duplicates found"
-                      image="https://cdn.shopify.com/s/files/1/0583/6465/7734/files/emptystate-files.png"
-                    >
-                      <Text variant="bodyMd" as="p" className="evergreen-text-secondary">
-                        Great news! Your store appears to be free of duplicate products.
-                      </Text>
-                      <div style={{ marginTop: '16px' }}>
-                        <Button
-                          onClick={handleStartScan}
-                          className="evergreen-primary-button evergreen-ripple"
-                        >
-                          Run Another Scan
-                        </Button>
+                  <div className="evergreen-empty-state-wrapper evergreen-animation-entrance">
+                    <Card className="evergreen-card evergreen-card-interactive evergreen-empty-state-card">
+                      <div className="evergreen-empty-state-content">
+                        <div className="evergreen-empty-state-icon">
+                          <div className="evergreen-icon-wrapper evergreen-icon-success evergreen-celebration-icon">
+                            <Icon source={CheckCircleIcon} tone="success" />
+                          </div>
+                        </div>
+                        <Text variant="headingLg" as="h3" className="evergreen-text-primary evergreen-empty-state-heading">
+                          No duplicates found! 🎉
+                        </Text>
+                        <Text variant="bodyMd" as="p" className="evergreen-text-secondary evergreen-empty-state-description">
+                          Great news! Your store appears to be free of duplicate products. Your catalog is clean and organized.
+                        </Text>
+                        <div className="evergreen-empty-state-actions">
+                          <Button
+                            onClick={handleStartScan}
+                            className="evergreen-primary-button evergreen-ripple evergreen-magnetic"
+                            variant="primary"
+                          >
+                            Run Another Scan
+                          </Button>
+                          <Button
+                            onClick={() => navigate("/app/settings")}
+                            className="evergreen-secondary-button evergreen-ripple"
+                          >
+                            Adjust Settings
+                          </Button>
+                        </div>
                       </div>
-                    </EmptyState>
-                  </Card>
+                    </Card>
+                  </div>
                 )}
               </BlockStack>
             </Layout.Section>
