@@ -193,6 +193,7 @@ export default function CheckDuplicates() {
                     padding: 1px;
                     overflow: hidden;
                     transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                    width: auto;
                 }
 
                 .evergreen-button-wrapper:hover {
@@ -208,6 +209,7 @@ export default function CheckDuplicates() {
                     border: 1px solid #10B981;
                     transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
                     overflow: hidden;
+                    width: auto;
                 }
 
                 .evergreen-button-wrapper-secondary:hover {
@@ -239,15 +241,104 @@ export default function CheckDuplicates() {
 
                 /* Hide Polaris Button Styles */
                 .evergreen-button-wrapper button,
-                .evergreen-button-wrapper-secondary button {
+                .evergreen-button-wrapper-secondary button,
+                .evergreen-button-wrapper .Polaris-Button,
+                .evergreen-button-wrapper-secondary .Polaris-Button {
                     background: transparent !important;
                     border: none !important;
                     box-shadow: none !important;
                     color: white !important;
+                    width: auto !important;
+                    min-width: auto !important;
+                    display: inline-flex !important;
+                    flex: none !important;
+                    max-width: none !important;
                 }
 
-                .evergreen-button-wrapper-secondary button {
+                .evergreen-button-wrapper-secondary button,
+                .evergreen-button-wrapper-secondary .Polaris-Button {
                     color: #10B981 !important;
+                }
+
+                /* Force button containers to not stretch */
+                .evergreen-button-wrapper,
+                .evergreen-button-wrapper-secondary {
+                    align-self: flex-start !important;
+                }
+
+                /* Override BlockStack children stretching */
+                .Polaris-BlockStack > .evergreen-button-wrapper,
+                .Polaris-BlockStack > .evergreen-button-wrapper-secondary {
+                    width: auto !important;
+                    align-self: flex-start !important;
+                }
+
+                /* Center buttons in Step 2 duplicate cards */
+                div[style*="text-align: center"] .evergreen-button-wrapper,
+                div[style*="text-align: center"] .evergreen-button-wrapper-secondary,
+                div[style*="textAlign: center"] .evergreen-button-wrapper,
+                div[style*="textAlign: center"] .evergreen-button-wrapper-secondary {
+                    align-self: center !important;
+                    margin: 0 auto !important;
+                }
+
+                /* Disabled Button Styles - Multiple Selectors for Better Support */
+                .evergreen-button-wrapper-secondary button[disabled],
+                .evergreen-button-wrapper-secondary button:disabled,
+                .evergreen-button-wrapper-secondary .Polaris-Button[disabled],
+                .evergreen-button-wrapper-secondary .Polaris-Button--disabled {
+                    color: #9CA3AF !important;
+                    background: #F3F4F6 !important;
+                    cursor: not-allowed !important;
+                    opacity: 1 !important;
+                }
+
+                /* Wrapper styles for disabled secondary buttons */
+                .evergreen-button-wrapper-disabled {
+                    background: #F3F4F6 !important;
+                    border: 1px solid #E5E7EB !important;
+                    cursor: not-allowed !important;
+                    opacity: 0.6 !important;
+                }
+
+                .evergreen-button-wrapper-disabled:hover {
+                    transform: none !important;
+                    box-shadow: none !important;
+                    background: #F3F4F6 !important;
+                    border: 1px solid #E5E7EB !important;
+                }
+
+                .evergreen-button-wrapper-disabled::before,
+                .evergreen-button-wrapper-disabled::after {
+                    display: none !important;
+                }
+
+                /* Disabled Primary Button Styles */
+                .evergreen-button-wrapper button[disabled],
+                .evergreen-button-wrapper button:disabled,
+                .evergreen-button-wrapper .Polaris-Button[disabled],
+                .evergreen-button-wrapper .Polaris-Button--disabled {
+                    color: #9CA3AF !important;
+                    cursor: not-allowed !important;
+                    opacity: 1 !important;
+                }
+
+                /* Wrapper styles for disabled primary buttons */
+                .evergreen-button-wrapper-primary-disabled {
+                    background: #E5E7EB !important;
+                    cursor: not-allowed !important;
+                    opacity: 0.6 !important;
+                }
+
+                .evergreen-button-wrapper-primary-disabled:hover {
+                    transform: none !important;
+                    box-shadow: none !important;
+                    background: #E5E7EB !important;
+                }
+
+                .evergreen-button-wrapper-primary-disabled::before,
+                .evergreen-button-wrapper-primary-disabled::after {
+                    display: none !important;
                 }
             `}</style>
 
@@ -265,18 +356,21 @@ export default function CheckDuplicates() {
                             {/* Step 1 */}
                             <Layout>
                                 <Layout.Section>
-                                    <Card>
+                                    <Card className="evergreen-card evergreen-card-interactive">
                                         <BlockStack gap="400">
                                             <Text as="p" variant="bodyMd">
                                                 <Text as="span" fontWeight="semibold">Step 1:</Text> Sync products for calculation of duplicate products and variants.
                                             </Text>
 
-                                            <Button
-                                                onClick={handleSyncProducts}
-                                                icon={RefreshIcon}
-                                            >
-                                                Sync products
-                                            </Button>
+                                            <div className="evergreen-button-wrapper evergreen-magnetic">
+                                                <Button
+                                                    onClick={handleSyncProducts}
+                                                    icon={RefreshIcon}
+                                                    variant="primary"
+                                                >
+                                                    Sync products
+                                                </Button>
+                                            </div>
                                         </BlockStack>
                                     </Card>
                                 </Layout.Section>
@@ -285,7 +379,7 @@ export default function CheckDuplicates() {
                             {/* Step 2 */}
                             <Layout>
                                 <Layout.Section>
-                                    <Card>
+                                    <Card className="evergreen-card evergreen-card-interactive">
                                         <BlockStack gap="400">
                                             <Text as="p" variant="bodyMd">
                                                 <Text as="span" fontWeight="semibold">Step 2:</Text> Select a field to take action for duplicate products and variants.
@@ -301,7 +395,7 @@ export default function CheckDuplicates() {
                                                 }
                                             }}>
                                                 {/* Duplicates by title */}
-                                                <Card background="bg-surface-secondary">
+                                                <Card className="evergreen-card evergreen-card-interactive">
                                                     <div style={{ padding: "20px", textAlign: "center" }}>
                                                         <BlockStack gap="300" align="center">
                                                             <Text as="h3" variant="headingSm" fontWeight="semibold">
@@ -310,19 +404,21 @@ export default function CheckDuplicates() {
                                                             <Text as="p" variant="heading2xl" alignment="center">
                                                                 {duplicateStats.byTitle}
                                                             </Text>
-                                                            <Button
-                                                                size="slim"
-                                                                onClick={() => handleCheckOptions('title')}
-                                                                disabled={duplicateStats.byTitle === 0}
-                                                            >
-                                                                Check options
-                                                            </Button>
+                                                            <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${duplicateStats.byTitle === 0 ? 'evergreen-button-wrapper-disabled' : ''}`}>
+                                                                <Button
+                                                                    size="slim"
+                                                                    onClick={() => handleCheckOptions('title')}
+                                                                    disabled={duplicateStats.byTitle === 0}
+                                                                >
+                                                                    Check options
+                                                                </Button>
+                                                            </div>
                                                         </BlockStack>
                                                     </div>
                                                 </Card>
 
                                                 {/* Duplicates by SKU */}
-                                                <Card background="bg-surface-secondary">
+                                                <Card className="evergreen-card evergreen-card-interactive">
                                                     <div style={{ padding: "20px", textAlign: "center" }}>
                                                         <BlockStack gap="300" align="center">
                                                             <Text as="h3" variant="headingSm" fontWeight="semibold">
@@ -331,19 +427,21 @@ export default function CheckDuplicates() {
                                                             <Text as="p" variant="heading2xl" alignment="center">
                                                                 {duplicateStats.bySku}
                                                             </Text>
-                                                            <Button
-                                                                size="slim"
-                                                                onClick={() => handleCheckOptions('SKU')}
-                                                                disabled={duplicateStats.bySku === 0}
-                                                            >
-                                                                Check options
-                                                            </Button>
+                                                            <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${duplicateStats.bySku === 0 ? 'evergreen-button-wrapper-disabled' : ''}`}>
+                                                                <Button
+                                                                    size="slim"
+                                                                    onClick={() => handleCheckOptions('SKU')}
+                                                                    disabled={duplicateStats.bySku === 0}
+                                                                >
+                                                                    Check options
+                                                                </Button>
+                                                            </div>
                                                         </BlockStack>
                                                     </div>
                                                 </Card>
 
                                                 {/* Duplicates by barcode */}
-                                                <Card background="bg-surface-secondary">
+                                                <Card className="evergreen-card evergreen-card-interactive">
                                                     <div style={{ padding: "20px", textAlign: "center" }}>
                                                         <BlockStack gap="300" align="center">
                                                             <Text as="h3" variant="headingSm" fontWeight="semibold">
@@ -352,19 +450,21 @@ export default function CheckDuplicates() {
                                                             <Text as="p" variant="heading2xl" alignment="center">
                                                                 {duplicateStats.byBarcode}
                                                             </Text>
-                                                            <Button
-                                                                size="slim"
-                                                                onClick={() => handleCheckOptions('barcode')}
-                                                                disabled={duplicateStats.byBarcode === 0}
-                                                            >
-                                                                Check options
-                                                            </Button>
+                                                            <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${duplicateStats.byBarcode === 0 ? 'evergreen-button-wrapper-disabled' : ''}`}>
+                                                                <Button
+                                                                    size="slim"
+                                                                    onClick={() => handleCheckOptions('barcode')}
+                                                                    disabled={duplicateStats.byBarcode === 0}
+                                                                >
+                                                                    Check options
+                                                                </Button>
+                                                            </div>
                                                         </BlockStack>
                                                     </div>
                                                 </Card>
 
                                                 {/* Duplicates by title + barcode */}
-                                                <Card background="bg-surface-secondary">
+                                                <Card className="evergreen-card evergreen-card-interactive">
                                                     <div style={{ padding: "20px", textAlign: "center" }}>
                                                         <BlockStack gap="300" align="center">
                                                             <Text as="h3" variant="headingSm" fontWeight="semibold">
@@ -373,19 +473,21 @@ export default function CheckDuplicates() {
                                                             <Text as="p" variant="heading2xl" alignment="center">
                                                                 {duplicateStats.byTitleBarcode}
                                                             </Text>
-                                                            <Button
-                                                                size="slim"
-                                                                onClick={() => handleCheckOptions('title + barcode')}
-                                                                disabled={duplicateStats.byTitleBarcode === 0}
-                                                            >
-                                                                Check options
-                                                            </Button>
+                                                            <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${duplicateStats.byTitleBarcode === 0 ? 'evergreen-button-wrapper-disabled' : ''}`}>
+                                                                <Button
+                                                                    size="slim"
+                                                                    onClick={() => handleCheckOptions('title + barcode')}
+                                                                    disabled={duplicateStats.byTitleBarcode === 0}
+                                                                >
+                                                                    Check options
+                                                                </Button>
+                                                            </div>
                                                         </BlockStack>
                                                     </div>
                                                 </Card>
 
                                                 {/* Duplicates by title + SKU */}
-                                                <Card background="bg-surface-secondary">
+                                                <Card className="evergreen-card evergreen-card-interactive">
                                                     <div style={{ padding: "20px", textAlign: "center" }}>
                                                         <BlockStack gap="300" align="center">
                                                             <Text as="h3" variant="headingSm" fontWeight="semibold">
@@ -394,19 +496,21 @@ export default function CheckDuplicates() {
                                                             <Text as="p" variant="heading2xl" alignment="center">
                                                                 {duplicateStats.byTitleSku}
                                                             </Text>
-                                                            <Button
-                                                                size="slim"
-                                                                onClick={() => handleCheckOptions('title + SKU')}
-                                                                disabled={duplicateStats.byTitleSku === 0}
-                                                            >
-                                                                Check options
-                                                            </Button>
+                                                            <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${duplicateStats.byTitleSku === 0 ? 'evergreen-button-wrapper-disabled' : ''}`}>
+                                                                <Button
+                                                                    size="slim"
+                                                                    onClick={() => handleCheckOptions('title + SKU')}
+                                                                    disabled={duplicateStats.byTitleSku === 0}
+                                                                >
+                                                                    Check options
+                                                                </Button>
+                                                            </div>
                                                         </BlockStack>
                                                     </div>
                                                 </Card>
 
                                                 {/* Duplicates by SKU + barcode */}
-                                                <Card background="bg-surface-secondary">
+                                                <Card className="evergreen-card evergreen-card-interactive">
                                                     <div style={{ padding: "20px", textAlign: "center" }}>
                                                         <BlockStack gap="300" align="center">
                                                             <Text as="h3" variant="headingSm" fontWeight="semibold">
@@ -415,13 +519,15 @@ export default function CheckDuplicates() {
                                                             <Text as="p" variant="heading2xl" alignment="center">
                                                                 {duplicateStats.bySkuBarcode}
                                                             </Text>
-                                                            <Button
-                                                                size="slim"
-                                                                onClick={() => handleCheckOptions('SKU + barcode')}
-                                                                disabled={duplicateStats.bySkuBarcode === 0}
-                                                            >
-                                                                Check options
-                                                            </Button>
+                                                            <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${duplicateStats.bySkuBarcode === 0 ? 'evergreen-button-wrapper-disabled' : ''}`}>
+                                                                <Button
+                                                                    size="slim"
+                                                                    onClick={() => handleCheckOptions('SKU + barcode')}
+                                                                    disabled={duplicateStats.bySkuBarcode === 0}
+                                                                >
+                                                                    Check options
+                                                                </Button>
+                                                            </div>
                                                         </BlockStack>
                                                     </div>
                                                 </Card>
