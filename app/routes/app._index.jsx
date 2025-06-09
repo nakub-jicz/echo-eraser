@@ -60,6 +60,39 @@ export default function Index() {
       document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
       document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
 
+      // Magnetic buttons effect (updated for wrappers)
+      const magneticButtons = document.querySelectorAll('.evergreen-magnetic, .evergreen-button-wrapper.evergreen-magnetic, .evergreen-button-wrapper-secondary.evergreen-magnetic');
+      magneticButtons.forEach(button => {
+        const rect = button.getBoundingClientRect();
+        const buttonCenterX = rect.left + rect.width / 2;
+        const buttonCenterY = rect.top + rect.height / 2;
+
+        const distance = Math.sqrt(
+          Math.pow(e.clientX - buttonCenterX, 2) + Math.pow(e.clientY - buttonCenterY, 2)
+        );
+
+        const maxDistance = 80; // Magnetic field radius
+
+        if (distance < maxDistance) {
+          const pullStrength = (maxDistance - distance) / maxDistance;
+          const pullX = (e.clientX - buttonCenterX) * pullStrength * 0.3;
+          const pullY = (e.clientY - buttonCenterY) * pullStrength * 0.3;
+
+          // For wrapper buttons, we can set transform directly
+          if (button.classList.contains('evergreen-button-wrapper') || button.classList.contains('evergreen-button-wrapper-secondary')) {
+            button.style.transform = `translate(${pullX}px, ${pullY}px)`;
+          } else {
+            button.style.setProperty('transform', `translate(${pullX}px, ${pullY}px)`, 'important');
+          }
+        } else {
+          if (button.classList.contains('evergreen-button-wrapper') || button.classList.contains('evergreen-button-wrapper-secondary')) {
+            button.style.transform = 'translate(0px, 0px)';
+          } else {
+            button.style.setProperty('transform', 'translate(0px, 0px)', 'important');
+          }
+        }
+      });
+
       // Enhanced parallax effect on cards
       const cards = document.querySelectorAll('.evergreen-card-interactive');
       cards.forEach(card => {
@@ -261,47 +294,402 @@ export default function Index() {
             z-index: 3;
           }
           
-          .evergreen-primary-button {
-            background: linear-gradient(120deg, #10B981 0%, #06B6D4 100%) !important;
-            border: none !important;
-            color: #FFFFFF !important;
-            font-weight: 600 !important;
-            border-radius: 8px !important;
-            padding: 12px 24px !important;
-            font-size: 1rem !important;
-            transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.25) !important;
-            position: relative !important;
-            overflow: hidden !important;
-            transform: translateY(0) !important;
+          /* WRAPPER APPROACH - Button effects using div wrappers */
+          .evergreen-button-wrapper {
+            display: inline-block;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: linear-gradient(120deg, #10B981 0%, #06B6D4 100%);
+            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.25);
+            cursor: pointer;
           }
           
-          .evergreen-primary-button::before {
+          .evergreen-button-wrapper .Polaris-Button {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 8px !important;
+            color: #FFFFFF !important;
+            font-weight: 600 !important;
+            margin: 0 !important;
+            padding: 12px 24px !important;
+          }
+          
+          .evergreen-button-wrapper-secondary {
+            display: inline-block;
+            position: relative;
+            background: #FFFFFF;
+            border: 1px solid #10B981;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.15);
+            cursor: pointer;
+          }
+          
+          .evergreen-button-wrapper-secondary .Polaris-Button {
+            color: #047857 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 8px !important;
+            margin: 0 !important;
+            padding: 12px 24px !important;
+            position: relative;
+            z-index: 2;
+          }
+          
+          /* WRAPPER HOVER EFFECTS */
+          .evergreen-button-wrapper:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+              0 8px 25px 0 rgba(16, 185, 129, 0.4),
+              0 0 20px rgba(16, 185, 129, 0.3);
+            filter: brightness(1.1);
+          }
+          
+          .evergreen-button-wrapper:active {
+            transform: translateY(0px);
+            transition: all 100ms ease;
+            box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.4);
+          }
+          
+          .evergreen-button-wrapper-secondary:hover {
+            transform: translateY(-2px);
+            border-color: #059669;
+            box-shadow: 
+              0 8px 25px 0 rgba(16, 185, 129, 0.2),
+              0 0 15px rgba(16, 185, 129, 0.15);
+          }
+          
+          .evergreen-button-wrapper-secondary:active {
+            transform: translateY(0px);
+            transition: all 100ms ease;
+            box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.2);
+          }
+          
+          /* SECONDARY SHIMMER EFFECT */
+          .evergreen-button-wrapper-secondary::before {
             content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.2), transparent);
             transition: left 500ms ease;
+            z-index: 1;
           }
           
-          .evergreen-primary-button:hover::before {
+          .evergreen-button-wrapper-secondary:hover::before {
             left: 100%;
           }
           
-          .evergreen-primary-button:hover {
+          /* SECONDARY RIPPLE EFFECT */
+          .evergreen-button-wrapper-secondary::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 600ms ease, height 600ms ease;
+            z-index: 1;
+          }
+          
+          .evergreen-button-wrapper-secondary:active::after {
+            width: 300px;
+            height: 300px;
+            transition: width 0ms, height 0ms;
+          }
+          
+
+          
+          /* SHIMMER EFFECT */
+          .evergreen-button-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 500ms ease;
+            z-index: 1;
+          }
+          
+          .evergreen-button-wrapper:hover::before {
+            left: 100%;
+          }
+          
+          /* RIPPLE EFFECT */
+          .evergreen-button-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 600ms ease, height 600ms ease;
+            z-index: 1;
+          }
+          
+          .evergreen-button-wrapper:active::after {
+            width: 300px;
+            height: 300px;
+            transition: width 0ms, height 0ms;
+          }
+          
+          .evergreen-button-wrapper .Polaris-Button {
+            position: relative;
+            z-index: 2;
+          }
+          
+          /* GLOW EFFECT FOR WRAPPERS - using pseudo element workaround */
+          .evergreen-button-wrapper.evergreen-button-glow {
+            position: relative;
+          }
+          
+          .evergreen-button-wrapper.evergreen-button-glow:before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #10B981, #06B6D4, #10B981, #06B6D4);
+            background-size: 400% 400%;
+            border-radius: 12px;
+            z-index: -2;
+            animation: glowRotate 4s ease-in-out infinite;
+            opacity: 0;
+            transition: opacity 300ms ease;
+          }
+          
+          .evergreen-button-wrapper.evergreen-button-glow:hover:before {
+            opacity: 0.7;
+          }
+          
+          /* Shimmer for glow buttons needs different approach */
+          .evergreen-button-wrapper.evergreen-button-glow .glow-shimmer {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 500ms ease;
+            z-index: 1;
+          }
+          
+          .evergreen-button-wrapper.evergreen-button-glow:hover .glow-shimmer {
+            left: 100%;
+          }
+          
+          /* PULSE EFFECT FOR WRAPPERS */
+          .evergreen-button-wrapper.evergreen-pulse {
+            animation: buttonPulse 2s infinite;
+          }
+          
+          /* MAGNETIC EFFECT FOR WRAPPERS */
+          .evergreen-button-wrapper.evergreen-magnetic {
+            transition: transform 150ms ease-out;
+          }
+          
+          .evergreen-primary-button::before,
+          button.evergreen-primary-button::before,
+          .Polaris-Button.evergreen-primary-button::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: -100% !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent) !important;
+            transition: left 500ms ease !important;
+            z-index: 1 !important;
+          }
+          
+          .evergreen-primary-button:hover::before,
+          button.evergreen-primary-button:hover::before,
+          .Polaris-Button.evergreen-primary-button:hover::before {
+            left: 100% !important;
+          }
+          
+          .evergreen-primary-button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 600ms ease, height 600ms ease;
+            z-index: 2;
+          }
+          
+          .evergreen-primary-button:active::after {
+            width: 300px;
+            height: 300px;
+            transition: width 0ms, height 0ms;
+          }
+          
+          .evergreen-primary-button > * {
+            position: relative;
+            z-index: 3;
+          }
+          
+          /* Magnetic effect */
+          .evergreen-magnetic,
+          button.evergreen-magnetic,
+          .Polaris-Button.evergreen-magnetic {
+            transition: transform 150ms ease-out !important;
+          }
+          
+          /* Pulsing effect for primary buttons */
+          @keyframes buttonPulse {
+            0% {
+              box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.25), 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+            70% {
+              box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.25), 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+            100% {
+              box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.25), 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+          }
+          
+          .evergreen-primary-button.evergreen-pulse,
+          button.evergreen-primary-button.evergreen-pulse,
+          .Polaris-Button.evergreen-primary-button.evergreen-pulse {
+            animation: buttonPulse 2s infinite !important;
+          }
+          
+          /* Wave animation */
+          @keyframes buttonWave {
+            0% {
+              transform: translateY(-2px) rotate(0deg);
+            }
+            25% {
+              transform: translateY(-3px) rotate(0.5deg);
+            }
+            50% {
+              transform: translateY(-2px) rotate(0deg);
+            }
+            75% {
+              transform: translateY(-3px) rotate(-0.5deg);
+            }
+            100% {
+              transform: translateY(-2px) rotate(0deg);
+            }
+          }
+          
+          /* Glow effect */
+          .evergreen-button-glow,
+          button.evergreen-button-glow,
+          .Polaris-Button.evergreen-button-glow {
+            position: relative !important;
+          }
+          
+          .evergreen-button-glow::before,
+          button.evergreen-button-glow::before,
+          .Polaris-Button.evergreen-button-glow::before {
+            content: '' !important;
+            position: absolute !important;
+            top: -2px !important;
+            left: -2px !important;
+            right: -2px !important;
+            bottom: -2px !important;
+            background: linear-gradient(45deg, #10B981, #06B6D4, #10B981, #06B6D4) !important;
+            background-size: 400% 400% !important;
+            border-radius: 10px !important;
+            z-index: -1 !important;
+            animation: glowRotate 4s ease-in-out infinite !important;
+            opacity: 0 !important;
+            transition: opacity 300ms ease !important;
+          }
+          
+          .evergreen-button-glow:hover::before,
+          button.evergreen-button-glow:hover::before,
+          .Polaris-Button.evergreen-button-glow:hover::before {
+            opacity: 0.7 !important;
+          }
+          
+          @keyframes glowRotate {
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+          
+          /* Button wrapper approach as backup */
+          .evergreen-button-wrapper {
+            display: inline-block;
+            position: relative;
+            transition: transform 150ms ease-out;
+          }
+          
+          .evergreen-button-wrapper.evergreen-magnetic:hover {
+            transform: none; /* Will be handled by JS */
+          }
+          
+          .evergreen-button-wrapper .evergreen-button-glow-bg {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #10B981, #06B6D4, #10B981, #06B6D4);
+            background-size: 400% 400%;
+            border-radius: 10px;
+            z-index: -1;
+            animation: glowRotate 4s ease-in-out infinite;
+            opacity: 0;
+            transition: opacity 300ms ease;
+            pointer-events: none;
+          }
+          
+          .evergreen-button-wrapper:hover .evergreen-button-glow-bg {
+            opacity: 0.7;
+          }
+          
+          .evergreen-primary-button:hover,
+          button.evergreen-primary-button:hover,
+          .Polaris-Button.evergreen-primary-button:hover {
             transform: translateY(-2px) !important;
-            box-shadow: 0 4px 12px 0 rgba(16, 185, 129, 0.3) !important;
+            box-shadow: 
+              0 8px 25px 0 rgba(16, 185, 129, 0.4) !important,
+              0 0 20px rgba(16, 185, 129, 0.3) !important;
+            filter: brightness(1.1) !important;
+            animation: buttonWave 0.6s ease-in-out !important;
           }
           
-          .evergreen-primary-button:active {
-            transform: translateY(-1px) !important;
+          .evergreen-primary-button:active,
+          button.evergreen-primary-button:active,
+          .Polaris-Button.evergreen-primary-button:active {
+            transform: translateY(0px) !important;
             transition: all 100ms ease !important;
+            box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.4) !important;
           }
           
-          .evergreen-secondary-button {
+          .evergreen-secondary-button,
+          button.evergreen-secondary-button,
+          .Polaris-Button.evergreen-secondary-button {
             background: #FFFFFF !important;
             border: 1px solid #10B981 !important;
             color: #047857 !important;
@@ -333,10 +721,43 @@ export default function Index() {
             z-index: 2;
           }
           
-          .evergreen-secondary-button:hover {
+          .evergreen-secondary-button:hover,
+          button.evergreen-secondary-button:hover,
+          .Polaris-Button.evergreen-secondary-button:hover {
             transform: translateY(-2px) !important;
             border-color: #059669 !important;
-            box-shadow: 0 4px 12px 0 rgba(16, 185, 129, 0.15) !important;
+            box-shadow: 
+              0 8px 25px 0 rgba(16, 185, 129, 0.2) !important,
+              0 0 15px rgba(16, 185, 129, 0.15) !important;
+            color: #047857 !important;
+          }
+          
+          .evergreen-secondary-button:active,
+          button.evergreen-secondary-button:active,
+          .Polaris-Button.evergreen-secondary-button:active {
+            transform: translateY(0px) !important;
+            transition: all 100ms ease !important;
+            box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.2) !important;
+          }
+          
+          .evergreen-secondary-button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 600ms ease, height 600ms ease;
+            z-index: 0;
+          }
+          
+          .evergreen-secondary-button:active::after {
+            width: 300px;
+            height: 300px;
+            transition: width 0ms, height 0ms;
           }
           
           .evergreen-callout-card {
@@ -1038,13 +1459,14 @@ export default function Index() {
                       </BlockStack>
 
                       <InlineStack gap="300">
-                        <Button
-                          onClick={handleStartScan}
-                          className="evergreen-primary-button evergreen-ripple"
-                          variant="primary"
-                        >
-                          Continue Setup
-                        </Button>
+                        <div className="evergreen-button-wrapper evergreen-magnetic evergreen-button-glow evergreen-pulse">
+                          <Button
+                            onClick={handleStartScan}
+                            variant="primary"
+                          >
+                            Continue Setup
+                          </Button>
+                        </div>
                       </InlineStack>
                     </BlockStack>
                   </div>
@@ -1075,15 +1497,16 @@ export default function Index() {
                             </Text>
                             {stats.duplicatesFound > 0 && (
                               <div style={{ marginTop: '12px' }}>
-                                <Button
-                                  onClick={handleViewResults}
-                                  tone="critical"
-                                  variant="primary"
-                                  size="slim"
-                                  className="evergreen-ripple"
-                                >
-                                  Review Duplicates
-                                </Button>
+                                <div className="evergreen-button-wrapper evergreen-magnetic">
+                                  <Button
+                                    onClick={handleViewResults}
+                                    tone="critical"
+                                    variant="primary"
+                                    size="slim"
+                                  >
+                                    Review Duplicates
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -1114,13 +1537,14 @@ export default function Index() {
                               Total products analyzed
                             </Text>
                             <div style={{ marginTop: '12px' }}>
-                              <Button
-                                onClick={handleStartScan}
-                                size="slim"
-                                className="evergreen-secondary-button evergreen-ripple"
-                              >
-                                Scan Again
-                              </Button>
+                              <div className="evergreen-button-wrapper-secondary evergreen-magnetic">
+                                <Button
+                                  onClick={handleStartScan}
+                                  size="slim"
+                                >
+                                  Scan Again
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1149,19 +1573,21 @@ export default function Index() {
                           Great news! Your store appears to be free of duplicate products. Your catalog is clean and organized.
                         </Text>
                         <div className="evergreen-empty-state-actions">
-                          <Button
-                            onClick={handleStartScan}
-                            className="evergreen-primary-button evergreen-ripple evergreen-magnetic"
-                            variant="primary"
-                          >
-                            Run Another Scan
-                          </Button>
-                          <Button
-                            onClick={() => navigate("/app/settings")}
-                            className="evergreen-secondary-button evergreen-ripple"
-                          >
-                            Adjust Settings
-                          </Button>
+                          <div className="evergreen-button-wrapper evergreen-magnetic evergreen-button-glow">
+                            <Button
+                              onClick={handleStartScan}
+                              variant="primary"
+                            >
+                              Run Another Scan
+                            </Button>
+                          </div>
+                          <div className="evergreen-button-wrapper-secondary evergreen-magnetic">
+                            <Button
+                              onClick={() => navigate("/app/settings")}
+                            >
+                              Adjust Settings
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </Card>
