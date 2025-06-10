@@ -153,6 +153,8 @@ export default function CheckDuplicates() {
     // MOUSE TRACKING & EFFECTS
     // =============================================================================
     useEffect(() => {
+        // Mouse tracking and effects
+
         const handleMouseMove = (e) => {
             mouseRef.current = { x: e.clientX, y: e.clientY };
 
@@ -200,7 +202,7 @@ export default function CheckDuplicates() {
             });
 
             // Enhanced parallax effect on cards
-            const cards = document.querySelectorAll('.evergreen-card');
+            const cards = document.querySelectorAll('.evergreen-card, .evergreen-stats-card');
             cards.forEach(card => {
                 const rect = card.getBoundingClientRect();
                 const cardCenterX = rect.left + rect.width / 2;
@@ -209,20 +211,46 @@ export default function CheckDuplicates() {
                 const deltaX = (e.clientX - cardCenterX) / rect.width;
                 const deltaY = (e.clientY - cardCenterY) / rect.height;
 
-                const maxTilt = 4;
-                const tiltX = deltaY * maxTilt;
-                const tiltY = deltaX * -maxTilt;
+                // Stats cards get special treatment
+                if (card.classList.contains('evergreen-stats-card')) {
+                    const maxTilt = 4; // More subtle for stats cards
+                    const tiltX = deltaY * maxTilt;
+                    const tiltY = deltaX * -maxTilt;
 
-                // Mouse position relative to card for glow effect
-                const mouseXPercent = ((e.clientX - rect.left) / rect.width) * 100;
-                const mouseYPercent = ((e.clientY - rect.top) / rect.height) * 100;
+                    // Mouse position relative to card for glow effect
+                    const mouseXPercent = ((e.clientX - rect.left) / rect.width) * 100;
+                    const mouseYPercent = ((e.clientY - rect.top) / rect.height) * 100;
 
-                if (Math.abs(deltaX) < 0.6 && Math.abs(deltaY) < 0.6) {
-                    card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(5px)`;
-                    card.style.setProperty('--mouse-x', `${mouseXPercent}%`);
-                    card.style.setProperty('--mouse-y', `${mouseYPercent}%`);
+                    if (Math.abs(deltaX) < 0.6 && Math.abs(deltaY) < 0.6) {
+                        card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(10px)`;
+                        card.style.setProperty('--mouse-x', `${mouseXPercent}%`);
+                        card.style.setProperty('--mouse-y', `${mouseYPercent}%`);
+
+                        // Enhanced glow on hover
+                        if (card.matches(':hover')) {
+                            card.style.setProperty('--glow-opacity', '1');
+                        }
+                    } else {
+                        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+                        card.style.setProperty('--glow-opacity', '0');
+                    }
                 } else {
-                    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+                    // Other interactive cards
+                    const maxTilt = 4;
+                    const tiltX = deltaY * maxTilt;
+                    const tiltY = deltaX * -maxTilt;
+
+                    // Mouse position relative to card for glow effect
+                    const mouseXPercent = ((e.clientX - rect.left) / rect.width) * 100;
+                    const mouseYPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+                    if (Math.abs(deltaX) < 0.6 && Math.abs(deltaY) < 0.6) {
+                        card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(5px)`;
+                        card.style.setProperty('--mouse-x', `${mouseXPercent}%`);
+                        card.style.setProperty('--mouse-y', `${mouseYPercent}%`);
+                    } else {
+                        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+                    }
                 }
             });
         };
@@ -251,7 +279,7 @@ export default function CheckDuplicates() {
                             headerButton = document.querySelector(selector);
                             if (headerButton) break;
                         } catch (e) {
-                            console.warn(`Selector failed: ${selector}`, e);
+                            // Silent fail
                         }
                     }
 
@@ -301,15 +329,14 @@ export default function CheckDuplicates() {
                         });
                     }
                 } catch (e) {
-                    console.warn('Header button styling failed', e);
+                    // Silent fail
                 }
             }, 100);
         };
 
-        // Run immediately and setup observer for dynamic content
+        // Run header button styling
         styleHeaderButton();
 
-        // Use MutationObserver to catch dynamically loaded content
         const observer = new MutationObserver(() => {
             styleHeaderButton();
         });
@@ -392,37 +419,60 @@ export default function CheckDuplicates() {
                     border: 1px solid #E5E7EB;
                     border-radius: 12px;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-                    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+                    transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
                     position: relative;
                     overflow: hidden;
                     z-index: 2;
                     transform-style: preserve-3d;
                 }
 
-                .evergreen-card:hover {
-                    box-shadow: 0px 20px 40px -10px rgba(17, 24, 39, 0.15), 0 8px 16px -8px rgba(17, 24, 39, 0.1);
-                    transform: translateY(-8px);
+                /* Stats Card Enhanced Styles */
+                .evergreen-stats-card-wrapper {
+                    position: relative;
+                    cursor: pointer;
+                    transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
                 }
 
-                .evergreen-card::before {
+                .evergreen-stats-card {
+                    transform-style: preserve-3d;
+                    transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 250ms ease;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .evergreen-stats-content {
+                    text-align: center;
+                    position: relative;
+                    min-height: 180px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 24px;
+                    background: linear-gradient(135deg, #FFFFFF 0%, #FAFBFB 100%);
+                    border-radius: 12px;
+                    overflow: hidden;
+                }
+
+                .evergreen-stats-content::before {
                     content: '';
                     position: absolute;
                     top: 0;
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background: rgba(0, 0, 0, 0);
-                    transition: background 250ms cubic-bezier(0.4, 0, 0.2, 1);
+                    background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(6, 182, 212, 0.03) 100%);
+                    opacity: 0;
+                    transition: opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
                     pointer-events: none;
                     z-index: 1;
                 }
 
-                .evergreen-card:hover::before {
-                    background: rgba(0, 0, 0, 0.04);
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-content::before {
+                    opacity: 1;
                 }
 
-                /* Shimmer effect */
-                .evergreen-card::after {
+                .evergreen-stats-content::after {
                     content: '';
                     position: absolute;
                     top: -50%;
@@ -431,23 +481,149 @@ export default function CheckDuplicates() {
                     height: 200%;
                     background: linear-gradient(
                         45deg,
-                        transparent 30%,
-                        rgba(16, 185, 129, 0.1) 50%,
-                        transparent 70%
+                        transparent 20%,
+                        rgba(16, 185, 129, 0.15) 50%,
+                        transparent 80%
                     );
-                    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-                    transition: transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                    transform: translateX(-150%) translateY(-150%) rotate(45deg);
+                    transition: transform 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
                     pointer-events: none;
                     z-index: 2;
+                    opacity: 0;
                 }
 
-                .evergreen-card:hover::after {
-                    transform: translateX(100%) translateY(100%) rotate(45deg);
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-content::after {
+                    transform: translateX(150%) translateY(150%) rotate(45deg);
+                    opacity: 1;
                 }
 
-                .evergreen-card > * {
+                .evergreen-stats-content > * {
                     position: relative;
                     z-index: 3;
+                }
+
+                .evergreen-stats-card-wrapper:hover {
+                    transform: translateY(-3px);
+                }
+
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-content {
+                    background: linear-gradient(135deg, #FAFAFA 0%, #F9FAFB 100%);
+                    box-shadow: 
+                        0px 12px 25px -8px rgba(16, 185, 129, 0.15), 
+                        0 4px 12px -2px rgba(17, 24, 39, 0.08),
+                        0 0 0 1px rgba(16, 185, 129, 0.1);
+                    border: 1px solid rgba(16, 185, 129, 0.2);
+                }
+
+                .evergreen-stats-number {
+                    font-size: 3rem;
+                    font-weight: 700;
+                    background: linear-gradient(135deg, #10B981 0%, #06B6D4 50%, #10B981 100%);
+                    background-size: 200% 200%;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    line-height: 1;
+                    margin: 0;
+                    transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                    position: relative;
+                    animation: gradientShift 4s ease-in-out infinite;
+                    letter-spacing: -0.01em;
+                }
+
+                @keyframes gradientShift {
+                    0%, 100% { 
+                        background-position: 0% 50%;
+                        transform: perspective(500px) rotateY(0deg);
+                    }
+                    50% { 
+                        background-position: 100% 50%;
+                        transform: perspective(500px) rotateY(2deg);
+                    }
+                }
+
+                .evergreen-stats-number::before {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 120%;
+                    height: 120%;
+                    background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+                    transform: translate(-50%, -50%);
+                    z-index: -1;
+                    opacity: 0;
+                    transition: opacity 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                    border-radius: 50%;
+                }
+
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-number {
+                    transform: perspective(500px) rotateY(1deg);
+                    filter: 
+                        drop-shadow(0 0 6px rgba(16, 185, 129, 0.3))
+                        drop-shadow(0 0 12px rgba(6, 182, 212, 0.2));
+                    animation-duration: 2s;
+                }
+
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-number::before {
+                    opacity: 0.7;
+                    transform: translate(-50%, -50%);
+                }
+
+                .evergreen-stats-header {
+                    margin-bottom: 16px;
+                    opacity: 0.8;
+                    transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-header {
+                    opacity: 1;
+                    transform: translateY(-1px);
+                }
+
+                .evergreen-stats-footer {
+                    margin-top: 16px;
+                    opacity: 0.7;
+                    transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-footer {
+                    opacity: 1;
+                    transform: translateY(1px);
+                }
+
+                /* Simple CSS hover effects for non-stats cards */
+                .evergreen-card:not(.evergreen-stats-card):hover {
+                    background: linear-gradient(135deg, #FFFFFF 0%, #FAFBFB 100%);
+                    border: 1px solid rgba(16, 185, 129, 0.3);
+                    box-shadow: 
+                        0px 20px 40px -10px rgba(17, 24, 39, 0.15), 
+                        0 8px 16px -8px rgba(17, 24, 39, 0.1),
+                        0 0 0 1px rgba(16, 185, 129, 0.1),
+                        0 0 20px rgba(16, 185, 129, 0.08);
+                    transform: translateY(-8px) scale(1.01);
+                }
+
+                /* Animate center content in duplicate cards */
+                .evergreen-card:not(.evergreen-stats-card):hover div[style*="text-align: center"] {
+                    transform: translateY(-2px);
+                    transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+
+                /* Animate numbers in non-stats cards */
+                .evergreen-card:not(.evergreen-stats-card):hover p[style*="heading2xl"] {
+                    color: #10B981;
+                    transform: scale(1.05) translateY(-2px);
+                    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.4));
+                    transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+
+                /* Animate headings in non-stats cards */
+                .evergreen-card:not(.evergreen-stats-card):hover h3 {
+                    color: #059669;
+                    transform: translateY(-1px);
+                    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.3));
+                    transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
                 }
 
                 /* Button Wrapper - Primary */
@@ -867,27 +1043,29 @@ export default function CheckDuplicates() {
                                                     const isDisabled = count === 0;
 
                                                     return (
-                                                        <Card key={type.key} className="evergreen-card">
-                                                            <div style={{ padding: "20px", textAlign: "center" }}>
-                                                                <BlockStack gap="300" align="center">
-                                                                    <Text as="h3" variant="headingSm" fontWeight="semibold">
+                                                        <div key={type.key} className="evergreen-stats-card-wrapper">
+                                                            <Card className="evergreen-card evergreen-stats-card">
+                                                                <div className="evergreen-stats-content">
+                                                                    <Text as="h3" variant="headingSm" fontWeight="semibold" className="evergreen-stats-header">
                                                                         {type.label}
                                                                     </Text>
-                                                                    <Text as="p" variant="heading2xl" alignment="center">
+                                                                    <div className="evergreen-stats-number">
                                                                         {count}
-                                                                    </Text>
-                                                                    <div className={getButtonWrapperClass(isDisabled)}>
-                                                                        <Button
-                                                                            size="slim"
-                                                                            onClick={() => handleCheckOptions(type.action)}
-                                                                            disabled={isDisabled}
-                                                                        >
-                                                                            Check options
-                                                                        </Button>
                                                                     </div>
-                                                                </BlockStack>
-                                                            </div>
-                                                        </Card>
+                                                                    <div className="evergreen-stats-footer">
+                                                                        <div className={getButtonWrapperClass(isDisabled)}>
+                                                                            <Button
+                                                                                size="slim"
+                                                                                onClick={() => handleCheckOptions(type.action)}
+                                                                                disabled={isDisabled}
+                                                                            >
+                                                                                Check options
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </Card>
+                                                        </div>
                                                     );
                                                 })}
                                             </div>

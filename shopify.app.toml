@@ -3,7 +3,7 @@
 client_id = "d856d539a212141f2921b1a1086bb1d6"
 name = "DC Echo Eraser"
 handle = "dc-echo-eraser"
-application_url = "https://ethernet-stream-guitars-updated.trycloudflare.com"
+application_url = "https://kingston-findlaw-nepal-rs.trycloudflare.com"
 embedded = true
 
 [build]
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://ethernet-stream-guitars-updated.trycloudflare.com/auth/callback",
-  "https://ethernet-stream-guitars-updated.trycloudflare.com/auth/shopify/callback",
-  "https://ethernet-stream-guitars-updated.trycloudflare.com/api/auth/callback"
+  "https://kingston-findlaw-nepal-rs.trycloudflare.com/auth/callback",
+  "https://kingston-findlaw-nepal-rs.trycloudflare.com/auth/shopify/callback",
+  "https://kingston-findlaw-nepal-rs.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
