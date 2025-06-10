@@ -717,6 +717,67 @@ export default function CheckDuplicates() {
                     transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
                 }
                 
+                .evergreen-stats-card-wrapper:hover {
+                    transform: translateY(-3px);
+                }
+                
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-content {
+                    background: linear-gradient(135deg, #FAFAFA 0%, #F9FAFB 100%);
+                    box-shadow: 
+                        0px 12px 25px -8px rgba(16, 185, 129, 0.15), 
+                        0 4px 12px -2px rgba(17, 24, 39, 0.08),
+                        0 0 0 1px rgba(16, 185, 129, 0.1);
+                    border: 1px solid rgba(16, 185, 129, 0.2);
+                }
+                
+                .evergreen-stats-card-wrapper .evergreen-stats-content::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(6, 182, 212, 0.03) 100%);
+                    opacity: 0;
+                    transition: opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                    pointer-events: none;
+                    z-index: 1;
+                }
+                
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-content::before {
+                    opacity: 1;
+                }
+                
+                .evergreen-stats-card-wrapper .evergreen-stats-content::after {
+                    content: '';
+                    position: absolute;
+                    top: -50%;
+                    left: -50%;
+                    width: 200%;
+                    height: 200%;
+                    background: linear-gradient(
+                        45deg,
+                        transparent 20%,
+                        rgba(16, 185, 129, 0.15) 50%,
+                        transparent 80%
+                    );
+                    transform: translateX(-150%) translateY(-150%) rotate(45deg);
+                    transition: transform 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                    pointer-events: none;
+                    z-index: 2;
+                    opacity: 0;
+                }
+                
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-content::after {
+                    transform: translateX(150%) translateY(150%) rotate(45deg);
+                    opacity: 1;
+                }
+                
+                .evergreen-stats-content > * {
+                    position: relative;
+                    z-index: 3;
+                }
+                
                 .evergreen-stats-content {
                     text-align: center;
                     position: relative;
