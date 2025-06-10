@@ -1036,7 +1036,648 @@ export default function CheckDuplicates() {
                         transform: translateY(0) scale(1);
                     }
                 }
-            `}</style>
+                
+                /* Enhanced hover effects */
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-number {
+                    transform: scale(1.1) rotateY(5deg);
+                    filter: 
+                        drop-shadow(0 0 10px rgba(16, 185, 129, 0.6))
+                        drop-shadow(0 0 20px rgba(6, 182, 212, 0.4))
+                        drop-shadow(0 0 30px rgba(16, 185, 129, 0.2));
+                    animation: pulseGlow 1.5s ease-in-out infinite alternate;
+                }
+                
+                @keyframes pulseGlow {
+                    0% { 
+                        filter: 
+                            drop-shadow(0 0 10px rgba(16, 185, 129, 0.6))
+                            drop-shadow(0 0 20px rgba(6, 182, 212, 0.4));
+                        transform: scale(1.1) rotateY(5deg);
+                    }
+                    100% { 
+                        filter: 
+                            drop-shadow(0 0 15px rgba(16, 185, 129, 0.8))
+                            drop-shadow(0 0 30px rgba(6, 182, 212, 0.6))
+                            drop-shadow(0 0 45px rgba(16, 185, 129, 0.3));
+                        transform: scale(1.15) rotateY(-2deg);
+                    }
+                }
+                
+                /* Text hover animations */
+                .evergreen-stats-card-wrapper:hover .Polaris-Text {
+                    animation: textShimmer 2s ease-in-out infinite;
+                    transform: translateY(-1px);
+                }
+                
+                @keyframes textShimmer {
+                    0%, 100% { 
+                        text-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
+                    }
+                    50% { 
+                        text-shadow: 
+                            0 0 10px rgba(16, 185, 129, 0.5),
+                            0 0 20px rgba(6, 182, 212, 0.3);
+                    }
+                }
+                
+                /* Button epic hover effects */
+                .evergreen-stats-card-wrapper:hover .evergreen-button-wrapper-secondary {
+                    transform: translateY(-3px) rotateZ(1deg);
+                    box-shadow: 
+                        0 10px 30px rgba(16, 185, 129, 0.3),
+                        0 0 0 2px rgba(16, 185, 129, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+                    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 50%, #ECFDF5 100%);
+                    border-color: #10B981;
+                }
+                
+                .evergreen-stats-card-wrapper:hover .evergreen-button-wrapper-secondary .Polaris-Button {
+                    color: #047857 !important;
+                    font-weight: 700 !important;
+                    text-shadow: 0 0 10px rgba(4, 120, 87, 0.5);
+                }
+                
+                /* Floating particles effect on hover */
+                .evergreen-stats-card-wrapper::before {
+                    content: '';
+                    position: absolute;
+                    top: 10%;
+                    left: 10%;
+                    width: 3px;
+                    height: 3px;
+                    background: #10B981;
+                    border-radius: 50%;
+                    opacity: 0;
+                    transition: all 400ms ease;
+                    box-shadow: 
+                        20px 10px 0 1px #06B6D4,
+                        40px 20px 0 0px #10B981,
+                        60px 5px 0 1px #06B6D4,
+                        80px 15px 0 0px #10B981,
+                        100px 25px 0 1px #06B6D4,
+                        -20px 30px 0 0px #10B981,
+                        -40px 10px 0 1px #06B6D4,
+                        -60px 25px 0 0px #10B981;
+                    animation: floatingParticles 3s ease-in-out infinite;
+                    pointer-events: none;
+                    z-index: 0;
+                }
+                
+                .evergreen-stats-card-wrapper:hover::before {
+                    opacity: 0.7;
+                    animation-duration: 2s;
+                }
+                
+                @keyframes floatingParticles {
+                    0%, 100% { 
+                        transform: translateY(0px) rotate(0deg) scale(1);
+                        opacity: 0.3;
+                    }
+                    25% { 
+                        transform: translateY(-5px) rotate(90deg) scale(1.2);
+                        opacity: 0.7;
+                    }
+                    50% { 
+                        transform: translateY(-10px) rotate(180deg) scale(0.8);
+                        opacity: 1;
+                    }
+                    75% { 
+                        transform: translateY(-5px) rotate(270deg) scale(1.1);
+                        opacity: 0.5;
+                    }
+                }
+                
+                /* Card rotation and scale effects */
+                .evergreen-stats-card-wrapper:hover .evergreen-card {
+                    transform: 
+                        perspective(1000px) 
+                        rotateX(2deg) 
+                        rotateY(-1deg) 
+                        scale(1.02)
+                        translateZ(10px);
+                    box-shadow: 
+                        0 25px 50px -10px rgba(16, 185, 129, 0.2),
+                        0 15px 30px -5px rgba(6, 182, 212, 0.15),
+                        0 0 0 3px rgba(16, 185, 129, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+                    background: linear-gradient(135deg, #FFFFFF 0%, #FAFFFE 50%, #F8FFFE 100%);
+                }
+                
+                /* Enhanced card glow */
+                .evergreen-stats-card-wrapper:hover .evergreen-card::before {
+                    content: '';
+                    position: absolute;
+                    top: -5px;
+                    left: -5px;
+                    right: -5px;
+                    bottom: -5px;
+                    background: linear-gradient(45deg, #10B981, #06B6D4, #10B981, #06B6D4);
+                    background-size: 400% 400%;
+                    border-radius: 16px;
+                    z-index: -1;
+                    animation: gradientGlow 3s ease-in-out infinite;
+                    opacity: 0.8;
+                    filter: blur(8px);
+                }
+                
+                @keyframes gradientGlow {
+                    0%, 100% { 
+                        background-position: 0% 50%;
+                        filter: blur(8px) brightness(1);
+                    }
+                    25% { 
+                        background-position: 100% 0%;
+                        filter: blur(10px) brightness(1.2);
+                    }
+                    50% { 
+                        background-position: 100% 100%;
+                        filter: blur(12px) brightness(1.4);
+                    }
+                    75% { 
+                        background-position: 0% 100%;
+                        filter: blur(10px) brightness(1.2);
+                    }
+                }
+                
+                /* Ripple effect on click */
+                .evergreen-stats-card-wrapper {
+                    overflow: hidden;
+                }
+                
+                .evergreen-stats-card-wrapper::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 0;
+                    height: 0;
+                    background: radial-gradient(circle, rgba(16, 185, 129, 0.6) 0%, transparent 70%);
+                    border-radius: 50%;
+                    transform: translate(-50%, -50%);
+                    transition: width 800ms ease, height 800ms ease, opacity 800ms ease;
+                    opacity: 0;
+                    pointer-events: none;
+                    z-index: 1;
+                }
+                
+                .evergreen-stats-card-wrapper:active::after {
+                    width: 300px;
+                    height: 300px;
+                    opacity: 1;
+                    transition: width 0ms, height 0ms, opacity 200ms;
+                }
+                
+                /* Magnetic field visualization */
+                .evergreen-stats-card-wrapper:hover {
+                    animation: magneticPulse 2s ease-in-out infinite;
+                }
+                
+                @keyframes magneticPulse {
+                    0%, 100% { 
+                        box-shadow: 
+                            0 0 0 0px rgba(16, 185, 129, 0.4),
+                            0 0 0 5px rgba(16, 185, 129, 0.1);
+                    }
+                    50% { 
+                        box-shadow: 
+                            0 0 0 8px rgba(16, 185, 129, 0.2),
+                            0 0 0 15px rgba(16, 185, 129, 0.05);
+                    }
+                }
+                
+                /* Enhanced disabled state */
+                .evergreen-stats-card-wrapper:has(.Polaris-Button[disabled]) {
+                    opacity: 0.6;
+                    filter: grayscale(0.3);
+                    pointer-events: none;
+                }
+                
+                .evergreen-stats-card-wrapper:has(.Polaris-Button[disabled]) .evergreen-stats-number {
+                    color: #9CA3AF;
+                    background: linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }
+                
+                /* Grid wave effect */
+                .evergreen-duplicate-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 32px;
+                }
+                
+                .evergreen-duplicate-grid .evergreen-stats-card-wrapper:nth-child(1) {
+                    animation-delay: 0ms;
+                }
+                .evergreen-duplicate-grid .evergreen-stats-card-wrapper:nth-child(2) {
+                    animation-delay: 100ms;
+                }
+                .evergreen-duplicate-grid .evergreen-stats-card-wrapper:nth-child(3) {
+                    animation-delay: 200ms;
+                }
+                .evergreen-duplicate-grid .evergreen-stats-card-wrapper:nth-child(4) {
+                    animation-delay: 50ms;
+                }
+                .evergreen-duplicate-grid .evergreen-stats-card-wrapper:nth-child(5) {
+                    animation-delay: 150ms;
+                }
+                .evergreen-duplicate-grid .evergreen-stats-card-wrapper:nth-child(6) {
+                    animation-delay: 250ms;
+                }
+                
+                /* Sequential hover effect - wave across grid */
+                .evergreen-duplicate-grid:hover .evergreen-stats-card-wrapper:nth-child(1) {
+                    animation: cardWave 0.6s ease-out 0s;
+                }
+                .evergreen-duplicate-grid:hover .evergreen-stats-card-wrapper:nth-child(2) {
+                    animation: cardWave 0.6s ease-out 0.1s;
+                }
+                .evergreen-duplicate-grid:hover .evergreen-stats-card-wrapper:nth-child(3) {
+                    animation: cardWave 0.6s ease-out 0.2s;
+                }
+                .evergreen-duplicate-grid:hover .evergreen-stats-card-wrapper:nth-child(4) {
+                    animation: cardWave 0.6s ease-out 0.05s;
+                }
+                .evergreen-duplicate-grid:hover .evergreen-stats-card-wrapper:nth-child(5) {
+                    animation: cardWave 0.6s ease-out 0.15s;
+                }
+                .evergreen-duplicate-grid:hover .evergreen-stats-card-wrapper:nth-child(6) {
+                    animation: cardWave 0.6s ease-out 0.25s;
+                }
+                
+                @keyframes cardWave {
+                    0% { 
+                        transform: translateY(0px) scale(1);
+                    }
+                    50% { 
+                        transform: translateY(-10px) scale(1.05);
+                    }
+                    100% { 
+                        transform: translateY(0px) scale(1);
+                    }
+                }
+                
+                /* Keyboard accessibility enhancements */
+                .evergreen-stats-card-wrapper:focus-within {
+                    outline: 3px solid rgba(16, 185, 129, 0.6);
+                    outline-offset: 3px;
+                    transform: translateY(-5px) scale(1.02);
+                    animation: focusGlow 2s ease-in-out infinite;
+                }
+                
+                @keyframes focusGlow {
+                    0%, 100% { 
+                        box-shadow: 
+                            0 0 0 3px rgba(16, 185, 129, 0.3),
+                            0 10px 25px rgba(16, 185, 129, 0.2);
+                    }
+                    50% { 
+                        box-shadow: 
+                            0 0 0 6px rgba(16, 185, 129, 0.5),
+                            0 15px 35px rgba(16, 185, 129, 0.3);
+                    }
+                }
+                
+                /* Enhanced button states */
+                .evergreen-stats-card-wrapper .evergreen-button-wrapper-secondary:focus-within {
+                    animation: buttonFocusPulse 1.5s ease-in-out infinite;
+                }
+                
+                @keyframes buttonFocusPulse {
+                    0%, 100% { 
+                        transform: translateY(-3px) rotateZ(0deg) scale(1);
+                        box-shadow: 
+                            0 8px 25px rgba(16, 185, 129, 0.25),
+                            0 0 0 2px rgba(16, 185, 129, 0.3);
+                    }
+                    50% { 
+                        transform: translateY(-5px) rotateZ(1deg) scale(1.05);
+                        box-shadow: 
+                            0 12px 35px rgba(16, 185, 129, 0.35),
+                            0 0 0 4px rgba(16, 185, 129, 0.5);
+                    }
+                }
+                
+                /* Advanced number animation on hover */
+                .evergreen-stats-card-wrapper:hover .evergreen-stats-number {
+                    animation: numberDance 1.5s ease-in-out infinite;
+                }
+                
+                @keyframes numberDance {
+                    0%, 100% { 
+                        transform: scale(1.1) rotateY(5deg) rotateZ(0deg);
+                    }
+                    25% { 
+                        transform: scale(1.15) rotateY(-2deg) rotateZ(1deg);
+                    }
+                    50% { 
+                        transform: scale(1.12) rotateY(3deg) rotateZ(-0.5deg);
+                    }
+                    75% { 
+                        transform: scale(1.14) rotateY(-1deg) rotateZ(0.5deg);
+                    }
+                }
+                
+                /* Rainbow edge effect on active cards */
+                .evergreen-stats-card-wrapper:active {
+                    animation: rainbowEdge 0.8s ease-out;
+                }
+                
+                @keyframes rainbowEdge {
+                    0% { 
+                        box-shadow: 
+                            0 0 0 2px #ff0000,
+                            0 0 20px rgba(255, 0, 0, 0.5);
+                    }
+                    16% { 
+                        box-shadow: 
+                            0 0 0 2px #ff8000,
+                            0 0 20px rgba(255, 128, 0, 0.5);
+                    }
+                    33% { 
+                        box-shadow: 
+                            0 0 0 2px #ffff00,
+                            0 0 20px rgba(255, 255, 0, 0.5);
+                    }
+                    50% { 
+                        box-shadow: 
+                            0 0 0 2px #00ff00,
+                            0 0 20px rgba(0, 255, 0, 0.5);
+                    }
+                    66% { 
+                        box-shadow: 
+                            0 0 0 2px #0080ff,
+                            0 0 20px rgba(0, 128, 255, 0.5);
+                    }
+                    83% { 
+                        box-shadow: 
+                            0 0 0 2px #8000ff,
+                            0 0 20px rgba(128, 0, 255, 0.5);
+                    }
+                    100% { 
+                        box-shadow: 
+                            0 0 0 2px #10B981,
+                            0 0 20px rgba(16, 185, 129, 0.5);
+                    }
+                }
+                
+                /* Step buttons and controls enhanced hover effects */
+                
+                /* Select dropdown spectacular hover */
+                .Polaris-Select {
+                    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                
+                .Polaris-Select:hover {
+                    transform: translateY(-2px) scale(1.02);
+                    box-shadow: 
+                        0 8px 25px rgba(16, 185, 129, 0.2),
+                        0 0 0 2px rgba(16, 185, 129, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+                    background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%);
+                }
+                
+                .Polaris-Select:hover .Polaris-Select__Content {
+                    color: #047857;
+                    font-weight: 600;
+                    text-shadow: 0 0 10px rgba(4, 120, 87, 0.3);
+                }
+                
+                .Polaris-Select:focus-within {
+                    animation: selectFocusGlow 2s ease-in-out infinite;
+                    outline: none;
+                }
+                
+                @keyframes selectFocusGlow {
+                    0%, 100% { 
+                        box-shadow: 
+                            0 0 0 3px rgba(16, 185, 129, 0.4),
+                            0 8px 25px rgba(16, 185, 129, 0.2);
+                        }
+                        50% { 
+                            box-shadow: 
+                                0 0 0 6px rgba(16, 185, 129, 0.6),
+                                0 12px 35px rgba(16, 185, 129, 0.3);
+                            }
+                        }
+                        
+                        /* Bulk Delete button epic effects */
+                        .Polaris-Button--primary {
+                            position: relative;
+                            overflow: hidden;
+                            transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                        }
+                        
+                        .Polaris-Button--primary::before {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: -100%;
+                            width: 100%;
+                            height: 100%;
+                            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+                            transition: left 600ms ease;
+                        }
+                        
+                        .Polaris-Button--primary:hover::before {
+                            left: 100%;
+                        }
+                        
+                        .Polaris-Button--primary:hover {
+                            transform: translateY(-3px) scale(1.05);
+                            box-shadow: 
+                                0 15px 35px rgba(220, 38, 38, 0.3),
+                                0 0 0 3px rgba(220, 38, 38, 0.2),
+                                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                            background: linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%);
+                            animation: buttonPulse 1.5s ease-in-out infinite;
+                        }
+                        
+                        @keyframes buttonPulse {
+                            0%, 100% { 
+                                box-shadow: 
+                                    0 15px 35px rgba(220, 38, 38, 0.3),
+                                    0 0 0 3px rgba(220, 38, 38, 0.2);
+                                }
+                                50% { 
+                                    box-shadow: 
+                                        0 20px 45px rgba(220, 38, 38, 0.4),
+                                        0 0 0 6px rgba(220, 38, 38, 0.3);
+                                }
+                            }
+                            
+                            .Polaris-Button--primary:active {
+                                animation: buttonRipple 0.6s ease-out;
+                            }
+                            
+                            @keyframes buttonRipple {
+                                0% {
+                                    box-shadow: 
+                                        0 0 0 0 rgba(220, 38, 38, 0.7),
+                                        0 15px 35px rgba(220, 38, 38, 0.3);
+                                }
+                                100% {
+                                    box-shadow: 
+                                        0 0 0 20px rgba(220, 38, 38, 0),
+                                        0 15px 35px rgba(220, 38, 38, 0.3);
+                                }
+                            }
+                            
+                            /* Hide/Show buttons elegant hover */
+                            .evergreen-step-toggle {
+                                transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+                                position: relative;
+                                overflow: hidden;
+                            }
+                            
+                            .evergreen-step-toggle::after {
+                                content: '';
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                width: 0;
+                                height: 0;
+                                background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%);
+                                border-radius: 50%;
+                                transform: translate(-50%, -50%);
+                                transition: all 400ms ease;
+                                pointer-events: none;
+                            }
+                            
+                            .evergreen-step-toggle:hover {
+                                transform: translateY(-2px) rotateZ(2deg);
+                                box-shadow: 
+                                    0 8px 20px rgba(16, 185, 129, 0.25),
+                                    0 0 0 2px rgba(16, 185, 129, 0.3);
+                                background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+                            }
+                            
+                            .evergreen-step-toggle:hover::after {
+                                width: 100px;
+                                height: 100px;
+                            }
+                            
+                            .evergreen-step-toggle:hover .Polaris-Icon {
+                                animation: iconSpin 1s ease-in-out infinite;
+                                filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+                            }
+                            
+                            @keyframes iconSpin {
+                                0%, 100% { 
+                                    transform: rotate(0deg) scale(1);
+                                }
+                                50% { 
+                                    transform: rotate(180deg) scale(1.2);
+                                }
+                            }
+                            
+                            /* Step headers enhanced hover */
+                            .evergreen-step-header {
+                                transition: all 300ms ease;
+                                cursor: pointer;
+                            }
+                            
+                            .evergreen-step-header:hover {
+                                background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+                                box-shadow: 
+                                    0 4px 12px rgba(16, 185, 129, 0.1),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+                                border-radius: 12px;
+                                transform: translateY(-1px);
+                            }
+                            
+                            .evergreen-step-header:hover .evergreen-step-number {
+                                animation: numberBounce 0.6s ease-out;
+                                box-shadow: 
+                                    0 4px 15px rgba(16, 185, 129, 0.3),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+                            }
+                            
+                            @keyframes numberBounce {
+                                0% { 
+                                    transform: scale(1) rotate(0deg);
+                                }
+                                50% { 
+                                    transform: scale(1.2) rotate(5deg);
+                                }
+                                100% { 
+                                    transform: scale(1) rotate(0deg);
+                                }
+                            }
+                            
+                            /* Warning callout enhanced effects */
+                            .Polaris-Banner--warning {
+                                transition: all 300ms ease;
+                                position: relative;
+                                overflow: hidden;
+                            }
+                            
+                            .Polaris-Banner--warning::before {
+                                content: '';
+                                position: absolute;
+                                top: 0;
+                                left: -100%;
+                                width: 100%;
+                                height: 2px;
+                                background: linear-gradient(90deg, transparent, #F59E0B, transparent);
+                                transition: left 800ms ease;
+                            }
+                            
+                            .Polaris-Banner--warning:hover::before {
+                                left: 100%;
+                            }
+                            
+                            .Polaris-Banner--warning:hover {
+                                transform: translateY(-2px);
+                                box-shadow: 
+                                    0 8px 25px rgba(245, 158, 11, 0.2),
+                                    0 0 0 1px rgba(245, 158, 11, 0.3);
+                                background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+                            }
+                            
+                            /* Enhanced form field hover effects */
+                            .Polaris-Checkbox__Input:hover + .Polaris-Checkbox__Backdrop {
+                                transform: scale(1.1);
+                                box-shadow: 
+                                    0 0 0 4px rgba(16, 185, 129, 0.2),
+                                    0 4px 12px rgba(16, 185, 129, 0.15);
+                                animation: checkboxGlow 1s ease-in-out infinite;
+                            }
+                            
+                            @keyframes checkboxGlow {
+                                0%, 100% { 
+                                    box-shadow: 
+                                        0 0 0 4px rgba(16, 185, 129, 0.2),
+                                        0 4px 12px rgba(16, 185, 129, 0.15);
+                                }
+                                50% { 
+                                    box-shadow: 
+                                        0 0 0 6px rgba(16, 185, 129, 0.3),
+                                        0 6px 18px rgba(16, 185, 129, 0.25);
+                                }
+                            }
+                            
+                            /* Card section hover enhancements */
+                            .evergreen-card-interactive:hover {
+                                animation: cardFloat 3s ease-in-out infinite;
+                            }
+                            
+                            @keyframes cardFloat {
+                                0%, 100% { 
+                                    transform: translateY(0px) rotate(0deg);
+                                }
+                                25% { 
+                                    transform: translateY(-2px) rotate(0.5deg);
+                                }
+                                50% { 
+                                    transform: translateY(-4px) rotate(0deg);
+                                }
+                                75% { 
+                                    transform: translateY(-2px) rotate(-0.5deg);
+                                }
+                            }
+                        `}</style>
 
             <div className="evergreen-page">
                 <Page
@@ -1113,8 +1754,8 @@ export default function CheckDuplicates() {
                         {!hasNoDuplicates && (
                             <>
                                 {/* =============================================================================
-                                    STEP 1: SYNC PRODUCTS
-                                    ============================================================================= */}
+                                                STEP 1: SYNC PRODUCTS
+                                                ============================================================================= */}
                                 <Layout>
                                     <Layout.Section>
                                         <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
@@ -1161,8 +1802,8 @@ export default function CheckDuplicates() {
                                 </Layout>
 
                                 {/* =============================================================================
-                                    STEP 2: SELECT DUPLICATE TYPE
-                                    ============================================================================= */}
+                                                STEP 2: SELECT DUPLICATE TYPE
+                                                ============================================================================= */}
                                 <Layout>
                                     <Layout.Section>
                                         <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
@@ -1190,14 +1831,7 @@ export default function CheckDuplicates() {
                                                         </Text>
 
                                                         {/* Duplicate Cards Grid */}
-                                                        <div style={{
-                                                            display: "grid",
-                                                            gridTemplateColumns: "repeat(3, 1fr)",
-                                                            gap: "32px",
-                                                            "@media (max-width: 768px)": {
-                                                                gridTemplateColumns: "1fr"
-                                                            }
-                                                        }}>
+                                                        <div className="evergreen-duplicate-grid">
                                                             {duplicateTypes.map((type) => {
                                                                 const count = duplicateStats[type.key];
                                                                 const isDisabled = count === 0;
@@ -1235,8 +1869,8 @@ export default function CheckDuplicates() {
                                 </Layout>
 
                                 {/* =============================================================================
-                                    STEP 3: BULK DELETE RULES
-                                    ============================================================================= */}
+                                                STEP 3: BULK DELETE RULES
+                                                ============================================================================= */}
                                 <Layout>
                                     <Layout.Section>
                                         <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
@@ -1299,8 +1933,8 @@ export default function CheckDuplicates() {
                                 </Layout>
 
                                 {/* =============================================================================
-                                    STEP 4: MANUAL SELECTION
-                                    ============================================================================= */}
+                                                STEP 4: MANUAL SELECTION
+                                                ============================================================================= */}
                                 <Layout>
                                     <Layout.Section>
                                         <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
