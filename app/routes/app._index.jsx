@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "@remix-run/react";
+import {
+  useLoaderData,
+  useNavigate,
+  useActionData,
+  useNavigation,
+  useSubmit
+} from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -14,6 +20,8 @@ import {
   Grid,
   CalloutCard,
   EmptyState,
+  Banner,
+  Spinner,
 } from "@shopify/polaris";
 import {
   CheckCircleIcon,
@@ -24,32 +32,210 @@ import {
 } from "@shopify/polaris-icons";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
+import {
+  fetchAllProducts,
+  findAllDuplicates,
+  updateDuplicateStats,
+  getDuplicateStats,
+  saveDuplicateGroups
+} from "../lib/duplicates.server.js";
+// Database import moved to functions that need it
 
 export const loader = async ({ request }) => {
-  await authenticate.admin(request);
-  return null;
+  const { admin, session } = await authenticate.admin(request);
+  const db = (await import("../db.server.js")).default;
+
+  // Get current duplicate statistics
+  const stats = await getDuplicateStats(session.shop);
+
+  // Get current scan session if any
+  const currentScan = await db.scanSession.findFirst({
+    where: {
+      shop: session.shop,
+      status: 'running'
+    },
+    orderBy: {
+      startedAt: 'desc'
+    }
+  });
+
+  return {
+    stats: stats || {
+      byTitle: 0,
+      bySku: 0,
+      byBarcode: 0,
+      byTitleSku: 0,
+      byTitleBarcode: 0,
+      bySkuBarcode: 0,
+      totalProductsScanned: 0,
+      lastScanAt: null
+    },
+    currentScan,
+    shopDomain: session.shop
+  };
 };
 
 export const action = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
-  // Placeholder for actual duplicate detection logic
-  return { success: true };
+  const { admin, session } = await authenticate.admin(request);
+  const db = (await import("../db.server.js")).default;
+  const formData = await request.formData();
+  const action = formData.get("action");
+
+  try {
+    if (action === "start_scan") {
+      // Create a new scan session
+      const scanSession = await db.scanSession.create({
+        data: {
+          shop: session.shop,
+          status: 'running',
+          startedAt: new Date()
+        }
+      });
+
+      // Start the scanning process (this would be better done in background)
+      console.log("Starting product scan...");
+
+      // Fetch all products
+      const products = await fetchAllProducts(admin);
+
+      // Update scan session with total products
+      await db.scanSession.update({
+        where: { id: scanSession.id },
+        data: {
+          totalProducts: products.length,
+          scannedProducts: products.length // For now, we scan all at once
+        }
+      });
+
+      console.log(`Fetched ${products.length} products, analyzing duplicates...`);
+
+      // Find all types of duplicates
+      const duplicates = await findAllDuplicates(products);
+
+      // Calculate total duplicates found
+      const totalDuplicates = Object.values(duplicates).reduce((sum, groups) => sum + groups.length, 0);
+
+      // Save duplicate groups to database
+      await Promise.all([
+        saveDuplicateGroups(session.shop, duplicates.byTitle, 'title'),
+        saveDuplicateGroups(session.shop, duplicates.bySku, 'sku'),
+        saveDuplicateGroups(session.shop, duplicates.byBarcode, 'barcode'),
+        saveDuplicateGroups(session.shop, duplicates.byTitleSku, 'title_sku'),
+        saveDuplicateGroups(session.shop, duplicates.byTitleBarcode, 'title_barcode'),
+        saveDuplicateGroups(session.shop, duplicates.bySkuBarcode, 'sku_barcode'),
+      ]);
+
+      // Update statistics
+      await updateDuplicateStats(session.shop, duplicates, products.length);
+
+      // Complete the scan session
+      await db.scanSession.update({
+        where: { id: scanSession.id },
+        data: {
+          status: 'completed',
+          duplicatesFound: totalDuplicates,
+          completedAt: new Date()
+        }
+      });
+
+      console.log(`Scan completed! Found ${totalDuplicates} duplicate groups.`);
+
+      return {
+        success: true,
+        message: `Scan completed! Found ${totalDuplicates} duplicate groups across ${products.length} products.`,
+        duplicates: {
+          byTitle: duplicates.byTitle.length,
+          bySku: duplicates.bySku.length,
+          byBarcode: duplicates.byBarcode.length,
+          byTitleSku: duplicates.byTitleSku.length,
+          byTitleBarcode: duplicates.byTitleBarcode.length,
+          bySkuBarcode: duplicates.bySkuBarcode.length,
+        }
+      };
+    }
+
+    return { success: false, error: "Unknown action" };
+  } catch (error) {
+    console.error("Scan error:", error);
+
+    // Update scan session with error if it exists
+    const failedScan = await db.scanSession.findFirst({
+      where: {
+        shop: session.shop,
+        status: 'running'
+      },
+      orderBy: {
+        startedAt: 'desc'
+      }
+    });
+
+    if (failedScan) {
+      await db.scanSession.update({
+        where: { id: failedScan.id },
+        data: {
+          status: 'failed',
+          errorMessage: error.message,
+          completedAt: new Date()
+        }
+      });
+    }
+
+    return {
+      success: false,
+      error: `Scan failed: ${error.message}`
+    };
+  }
 };
+
+// Meta export for SEO
+export const meta = () => {
+  return [
+    { title: "DC Echo Eraser - Dashboard" },
+    { name: "description", content: "Intelligent duplicate detection for your Shopify store" },
+  ];
+};
+
+// Error boundary for this route
+export function ErrorBoundary({ error }) {
+  console.error(error);
+  return (
+    <div style={{ padding: '20px' }}>
+      <h1>Something went wrong!</h1>
+      <p>Error: {error.message}</p>
+      <a href="/app">Back to Home</a>
+    </div>
+  );
+}
 
 export default function Index() {
   const shopify = useAppBridge();
   const navigate = useNavigate();
+  const navigation = useNavigation();
+  const submit = useSubmit();
   const mouseRef = useRef({ x: 0, y: 0 });
 
-  // Mock data - replace with real data from your backend
-  const [stats] = useState({
-    duplicatesFound: 47,
-    productsScanned: 1247,
-    completedSteps: 2,
-    totalSteps: 4
-  });
+  // Get real data from loader
+  const { stats, currentScan, shopDomain } = useLoaderData();
+  const actionData = useActionData();
 
-  const [showSetupGuide] = useState(true);
+  // Calculate derived stats
+  const totalDuplicatesFound = stats.byTitle + stats.bySku + stats.byBarcode + stats.byTitleSku + stats.byTitleBarcode + stats.bySkuBarcode;
+  const isScanning = currentScan?.status === 'running' || navigation.state === 'submitting';
+  const hasBeenScanned = stats.lastScanAt !== null;
+
+  const [showSetupGuide] = useState(!hasBeenScanned);
+
+  // Banner dismissal state
+  const [dismissedBanners, setDismissedBanners] = useState(new Set());
+
+  // Show toast messages for action results
+  useEffect(() => {
+    if (actionData?.success) {
+      shopify.toast.show(actionData.message);
+    } else if (actionData?.error) {
+      shopify.toast.show(actionData.error, { isError: true });
+    }
+  }, [actionData, shopify]);
 
   // Mouse tracking for advanced effects
   useEffect(() => {
@@ -266,14 +452,27 @@ export default function Index() {
     };
   }, []);
 
-  // Placeholder functions
+  // Banner dismissal function
+  const handleDismissBanner = (bannerId) => {
+    setDismissedBanners(prev => new Set([...prev, bannerId]));
+  };
+
+  // Real functions
   const handleStartScan = () => {
-    shopify.toast.show("Scan started successfully");
-    navigate("/app/check-duplicates");
+    if (isScanning) {
+      shopify.toast.show("Scan is already in progress", { isError: true });
+      return;
+    }
+
+    // Use Remix's useSubmit hook properly
+    const formData = new FormData();
+    formData.append('action', 'start_scan');
+
+    submit(formData, { method: 'post' });
   };
 
   const handleViewResults = () => {
-    navigate("/app/results");
+    navigate("/app/check-duplicates");
   };
 
   const progressPercentage = (stats.completedSteps / stats.totalSteps) * 100;
@@ -1628,16 +1827,42 @@ export default function Index() {
 
       <div className="evergreen-page">
         <Page
-          title="Duplicate Products Manager"
-          subtitle="Find and manage duplicate products in your store"
+          title="DC Echo Eraser"
+          subtitle="Intelligent duplicate detection for your Shopify store"
           primaryAction={{
-            content: "Start New Scan",
+            content: isScanning ? "Scanning..." : (showSetupGuide ? "Start First Scan" : "Start New Scan"),
             onAction: handleStartScan,
+            loading: isScanning,
+            disabled: isScanning,
           }}
         >
           <Layout>
             <Layout.Section>
               <BlockStack gap="500">
+                {/* Scanning Status Banner */}
+                {isScanning && (
+                  <Banner
+                    title="Scanning in progress..."
+                    tone="info"
+                    action={{ content: "View Details", url: "/app/check-duplicates" }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Spinner size="small" />
+                      <span>Analyzing your products for duplicates. This may take a few minutes.</span>
+                    </div>
+                  </Banner>
+                )}
+
+                {/* Success Banner */}
+                {actionData?.success && !isScanning && !dismissedBanners.has('success') && (
+                  <Banner
+                    title="Scan completed successfully!"
+                    tone="success"
+                    onDismiss={() => handleDismissBanner('success')}
+                  >
+                    {actionData.message}
+                  </Banner>
+                )}
                 {/* Setup Guide */}
                 {showSetupGuide && (
                   <div className="evergreen-callout-card evergreen-animation-entrance">
@@ -1719,14 +1944,14 @@ export default function Index() {
                           </div>
 
                           <div className="evergreen-stats-number">
-                            {stats.duplicatesFound}
+                            {totalDuplicatesFound}
                           </div>
 
                           <div className="evergreen-stats-footer">
                             <Text variant="bodySm" as="p" className="evergreen-text-secondary">
                               Products that may be duplicates
                             </Text>
-                            {stats.duplicatesFound > 0 && (
+                            {totalDuplicatesFound > 0 && (
                               <div style={{ marginTop: '12px' }}>
                                 <div className="evergreen-button-wrapper evergreen-magnetic">
                                   <Button
@@ -1760,7 +1985,7 @@ export default function Index() {
                           </div>
 
                           <div className="evergreen-stats-number">
-                            {stats.productsScanned.toLocaleString()}
+                            {stats.totalProductsScanned?.toLocaleString() || '0'}
                           </div>
 
                           <div className="evergreen-stats-footer">
@@ -1788,7 +2013,7 @@ export default function Index() {
 
 
                 {/* Empty State for No Duplicates */}
-                {stats.duplicatesFound === 0 && stats.productsScanned > 0 && (
+                {totalDuplicatesFound === 0 && hasBeenScanned && (
                   <div className="evergreen-empty-state-wrapper evergreen-animation-entrance">
                     <Card className="evergreen-card evergreen-card-interactive evergreen-empty-state-card">
                       <div className="evergreen-empty-state-content">

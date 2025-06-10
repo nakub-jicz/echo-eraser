@@ -10,6 +10,16 @@ export const action = async ({ request }) => {
   // If this webhook already ran, the session may have been deleted previously.
   if (session) {
     await db.session.deleteMany({ where: { shop } });
+
+    // Clean up app-specific data
+    await Promise.all([
+      db.duplicateGroup.deleteMany({ where: { shop } }),
+      db.duplicateStats.deleteMany({ where: { shop } }),
+      db.scanSession.deleteMany({ where: { shop } }),
+      db.productBackup.deleteMany({ where: { shop } }),
+    ]);
+
+    console.log(`Cleaned up all data for shop: ${shop}`);
   }
 
   return new Response();

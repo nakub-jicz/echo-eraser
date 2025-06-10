@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "@remix-run/react";
+import { useLoaderData, useNavigate, useActionData, useNavigation, useSubmit } from "@remix-run/react";
+// Removed redirect import - not needed
 import {
     Page,
     Layout,
@@ -12,78 +13,380 @@ import {
     Checkbox,
     Thumbnail,
     Badge,
+    Banner,
+    EmptyState,
 } from "@shopify/polaris";
 import {
     RefreshIcon,
+    ProductIcon,
 } from "@shopify/polaris-icons";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
-
+import {
+    getDuplicateStats,
+    fetchAllProducts,
+    findAllDuplicates,
+    updateDuplicateStats,
+    saveDuplicateGroups
+} from "../lib/duplicates.server.js";
+// Database import moved to functions that need it
 
 // =============================================================================
 // LOADER & ACTION
 // =============================================================================
 export const loader = async ({ request }) => {
-    await authenticate.admin(request);
-    return null;
+    const { admin, session } = await authenticate.admin(request);
+    const db = (await import("../db.server.js")).default;
+
+    // Get duplicate statistics
+    const stats = await getDuplicateStats(session.shop);
+
+    // Get duplicate groups from database
+    const duplicateGroups = await db.duplicateGroup.findMany({
+        where: {
+            shop: session.shop,
+            resolved: false,
+        },
+        orderBy: {
+            createdAt: 'desc',
+        },
+    });
+
+    // Fetch products for the duplicate groups
+    let productsData = [];
+    if (duplicateGroups.length > 0) {
+        try {
+            const allProducts = await fetchAllProducts(admin);
+
+            // Create a map for quick product lookup
+            const productMap = new Map();
+            allProducts.forEach(product => {
+                productMap.set(product.id, product);
+            });
+
+            // Build products data with duplicate group information
+            duplicateGroups.forEach(group => {
+                const productIds = JSON.parse(group.productIds);
+                const groupProducts = productIds
+                    .map(id => productMap.get(id))
+                    .filter(Boolean)
+                    .map(product => ({
+                        ...product,
+                        duplicateRule: group.rule,
+                        groupId: group.id,
+                        similarity: group.similarity,
+                    }));
+
+                productsData.push(...groupProducts);
+            });
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        }
+    }
+
+    return {
+        stats: stats || {
+            byTitle: 0,
+            bySku: 0,
+            byBarcode: 0,
+            byTitleSku: 0,
+            byTitleBarcode: 0,
+            bySkuBarcode: 0,
+            totalProductsScanned: 0,
+            lastScanAt: null
+        },
+        duplicateGroups,
+        productsData,
+        shopDomain: session.shop
+    };
 };
 
 export const action = async ({ request }) => {
-    const { admin } = await authenticate.admin(request);
-    // Placeholder for actual duplicate detection logic
-    return { success: true };
+    const { admin, session } = await authenticate.admin(request);
+    const db = (await import("../db.server.js")).default;
+    const formData = await request.formData();
+    const action = formData.get("action");
+
+    try {
+        if (action === "delete_products") {
+            const productIds = JSON.parse(formData.get("productIds"));
+
+            // Delete products from Shopify
+            const deletePromises = productIds.map(async (productId) => {
+                const response = await admin.graphql(`
+                    mutation productDelete($input: ProductDeleteInput!) {
+                        productDelete(input: $input) {
+                            deletedProductId
+                            userErrors {
+                                field
+                                message
+                            }
+                        }
+                    }
+                `, {
+                    variables: {
+                        input: {
+                            id: productId
+                        }
+                    }
+                });
+
+                const result = await response.json();
+                if (result.data?.productDelete?.userErrors?.length > 0) {
+                    throw new Error(result.data.productDelete.userErrors[0].message);
+                }
+
+                return result.data?.productDelete?.deletedProductId;
+            });
+
+            const deletedIds = await Promise.all(deletePromises);
+
+            // Mark related duplicate groups as resolved
+            // Find all groups that contain any of the deleted products
+            const groupsToResolve = await db.duplicateGroup.findMany({
+                where: {
+                    shop: session.shop,
+                    resolved: false
+                }
+            });
+
+            const groupIdsToResolve = groupsToResolve
+                .filter(group => {
+                    const groupProductIds = JSON.parse(group.productIds);
+                    return productIds.some(deletedId => groupProductIds.includes(deletedId));
+                })
+                .map(group => group.id);
+
+            if (groupIdsToResolve.length > 0) {
+                await db.duplicateGroup.updateMany({
+                    where: {
+                        id: { in: groupIdsToResolve }
+                    },
+                    data: {
+                        resolved: true,
+                        resolvedAt: new Date()
+                    }
+                });
+            }
+
+            return {
+                success: true,
+                message: `Successfully deleted ${deletedIds.length} products.`,
+                deletedCount: deletedIds.length
+            };
+        }
+
+        if (action === "sync_products") {
+            // Create a new scan session
+            const scanSession = await db.scanSession.create({
+                data: {
+                    shop: session.shop,
+                    status: 'running',
+                    startedAt: new Date()
+                }
+            });
+
+            // Start the scanning process
+            // Fetch all products
+            const products = await fetchAllProducts(admin);
+
+            // Update scan session with total products
+            await db.scanSession.update({
+                where: { id: scanSession.id },
+                data: {
+                    totalProducts: products.length,
+                    scannedProducts: products.length // For now, we scan all at once
+                }
+            });
+
+            // Clear old unresolved duplicate groups for this shop
+            await db.duplicateGroup.deleteMany({
+                where: {
+                    shop: session.shop,
+                    resolved: false
+                }
+            });
+
+            // Find all types of duplicates
+            const duplicates = await findAllDuplicates(products);
+
+            // Calculate total duplicates found
+            const totalDuplicates = Object.values(duplicates).reduce((sum, groups) => sum + groups.length, 0);
+
+            // Save duplicate groups to database
+            await Promise.all([
+                saveDuplicateGroups(session.shop, duplicates.byTitle, 'title'),
+                saveDuplicateGroups(session.shop, duplicates.bySku, 'sku'),
+                saveDuplicateGroups(session.shop, duplicates.byBarcode, 'barcode'),
+                saveDuplicateGroups(session.shop, duplicates.byTitleSku, 'title_sku'),
+                saveDuplicateGroups(session.shop, duplicates.byTitleBarcode, 'title_barcode'),
+                saveDuplicateGroups(session.shop, duplicates.bySkuBarcode, 'sku_barcode'),
+            ]);
+
+            // Update statistics
+            await updateDuplicateStats(session.shop, duplicates, products.length);
+
+            // Complete the scan session
+            await db.scanSession.update({
+                where: { id: scanSession.id },
+                data: {
+                    status: 'completed',
+                    duplicatesFound: totalDuplicates,
+                    completedAt: new Date()
+                }
+            });
+
+            return {
+                success: true,
+                message: `Sync completed! Found ${totalDuplicates} duplicate groups across ${products.length} products.`,
+                duplicates: {
+                    byTitle: duplicates.byTitle.length,
+                    bySku: duplicates.bySku.length,
+                    byBarcode: duplicates.byBarcode.length,
+                    byTitleSku: duplicates.byTitleSku.length,
+                    byTitleBarcode: duplicates.byTitleBarcode.length,
+                    bySkuBarcode: duplicates.bySkuBarcode.length,
+                }
+            };
+        }
+
+        return { success: false, error: "Unknown action" };
+    } catch (error) {
+        console.error("Action error:", error);
+
+        // Update scan session with error if it exists and this was a sync operation
+        if (action === "sync_products") {
+            const failedScan = await db.scanSession.findFirst({
+                where: {
+                    shop: session.shop,
+                    status: 'running'
+                },
+                orderBy: {
+                    startedAt: 'desc'
+                }
+            });
+
+            if (failedScan) {
+                await db.scanSession.update({
+                    where: { id: failedScan.id },
+                    data: {
+                        status: 'failed',
+                        errorMessage: error?.message || 'Unknown error',
+                        completedAt: new Date()
+                    }
+                });
+            }
+        }
+
+        return {
+            success: false,
+            error: `Operation failed: ${error?.message || 'Unknown error'}`
+        };
+    }
 };
 
 // =============================================================================
 // MAIN COMPONENT
 // =============================================================================
+// Meta export for SEO
+export const meta = () => {
+    return [
+        { title: "DC Echo Eraser - Check Duplicates" },
+        { name: "description", content: "Find and manage duplicate products in your Shopify store" },
+    ];
+};
+
+// Error boundary for this route
+export function ErrorBoundary({ error }) {
+    console.error("Check Duplicates Error:", error);
+    return (
+        <div style={{ padding: '20px' }}>
+            <h1>Something went wrong!</h1>
+            <p>Error: {error?.message || 'Unknown error'}</p>
+            <a href="/app">Back to Home</a>
+        </div>
+    );
+}
+
 export default function CheckDuplicates() {
     const shopify = useAppBridge();
     const navigate = useNavigate();
+    const navigation = useNavigation();
+    const submit = useSubmit();
     const mouseRef = useRef({ x: 0, y: 0 });
+
+    // Get real data from loader
+    const loaderData = useLoaderData();
+    const actionData = useActionData();
+
+    // Safety check for loader data
+    if (!loaderData) {
+        return (
+            <div style={{ padding: '20px' }}>
+                <h1>Loading...</h1>
+                <p>Please wait while we load the data.</p>
+            </div>
+        );
+    }
+
+    const { stats, duplicateGroups, productsData, shopDomain } = loaderData;
 
     // =============================================================================
     // STATE MANAGEMENT
     // =============================================================================
-    // Mock data for duplicates - Replace with real API data
-    const [duplicateStats] = useState({
-        byTitle: 47,
-        bySku: 23,
-        byBarcode: 15,
-        byTitleBarcode: 8,
-        byTitleSku: 12,
-        bySkuBarcode: 5
-    });
+    // Real data for duplicates with safety checks
+    const duplicateStats = {
+        byTitle: stats?.byTitle || 0,
+        bySku: stats?.bySku || 0,
+        byBarcode: stats?.byBarcode || 0,
+        byTitleBarcode: stats?.byTitleBarcode || 0,
+        byTitleSku: stats?.byTitleSku || 0,
+        bySkuBarcode: stats?.bySkuBarcode || 0
+    };
 
     // Step 3 state
     const [selectedRule, setSelectedRule] = useState("");
 
-    // Step 4 state - mock duplicate products
+    // Step 4 state - real duplicate products
     const [selectedProducts, setSelectedProducts] = useState([]);
-    const [duplicateProducts] = useState([
-        {
-            id: "1",
-            image: "https://burst.shopifycdn.com/photos/business-surprise.jpg",
+
+    // Banner dismissal state
+    const [dismissedBanners, setDismissedBanners] = useState(new Set());
+
+    // Convert real product data to display format with safety check
+    const duplicateProducts = (productsData || []).map(product => {
+        // Handle both sanitized and original product structures
+        const firstVariant = product.variants?.[0] || product.variants?.edges?.[0]?.node || {};
+        const firstImage = product.images?.[0] || product.images?.edges?.[0]?.node || {};
+
+        return {
+            id: product.id,
+            image: firstImage.url || "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-5.png",
             type: "Product",
-            title: "The Out of Stock Snowboard",
-            sku: "",
-            barcode: "",
-            price: "885.95",
-            status: "ACTIVE",
-            createdAt: "2025-06-08 16:36 (22 hours ago)"
-        },
-        {
-            id: "2",
-            image: "https://burst.shopifycdn.com/photos/business-surprise.jpg",
-            type: "Product",
-            title: "The Out of Stock Snowboard",
-            sku: "80",
-            barcode: "",
-            price: "885.95",
-            status: "DRAFT",
-            createdAt: "2025-06-09 15:07 (20 minutes ago)"
+            title: product.title,
+            sku: firstVariant.sku || "",
+            barcode: firstVariant.barcode || "",
+            price: firstVariant.price || "0.00",
+            status: product.status,
+            createdAt: new Date(product.createdAt).toLocaleDateString(),
+            duplicateRule: product.duplicateRule,
+            groupId: product.groupId,
+            similarity: product.similarity,
+        };
+    });
+
+    const totalDuplicatesFound = Object.values(duplicateStats).reduce((sum, count) => sum + count, 0);
+    const hasNoDuplicates = totalDuplicatesFound === 0;
+    const isScanning = navigation.state === 'submitting' && navigation.formData?.get('action') === 'sync_products';
+
+    // Show toast messages for action results
+    useEffect(() => {
+        if (actionData?.success) {
+            shopify.toast.show(actionData.message);
+        } else if (actionData?.error) {
+            shopify.toast.show(actionData.error, { isError: true });
         }
-    ]);
+    }, [actionData, shopify]);
 
     // =============================================================================
     // CONFIGURATION
@@ -203,13 +506,23 @@ export default function CheckDuplicates() {
     // EVENT HANDLERS
     // =============================================================================
     const handleSyncProducts = () => {
-        shopify.toast.show("Products synced successfully");
+        if (isScanning) {
+            shopify.toast.show("Scan is already in progress", { isError: true });
+            return;
+        }
+
+        // Use Remix's useSubmit hook properly
+        const formData = new FormData();
+        formData.append('action', 'sync_products');
+
+        submit(formData, { method: 'post' });
     };
 
     const handleCheckOptions = (type) => {
-        shopify.toast.show(`Checking ${type} duplicates...`);
+        setSelectedRule(type);
     };
 
+    // Navigate back to dashboard
     const handleBack = () => {
         navigate("/app");
     };
@@ -219,7 +532,26 @@ export default function CheckDuplicates() {
             shopify.toast.show("Please select a rule first", { isError: true });
             return;
         }
-        shopify.toast.show(`Bulk deleting using rule: ${ruleOptions.find(r => r.value === selectedRule)?.label}`);
+
+        const confirmation = confirm(`Are you sure you want to delete all duplicates using rule: ${ruleOptions.find(r => r.value === selectedRule)?.label}? This action cannot be undone.`);
+        if (!confirmation) return;
+
+        // Get products matching the selected rule
+        const productsToDelete = duplicateProducts
+            .filter(product => product.duplicateRule === selectedRule)
+            .map(product => product.id);
+
+        if (productsToDelete.length === 0) {
+            shopify.toast.show("No products found for the selected rule", { isError: true });
+            return;
+        }
+
+        // Use useSubmit hook for proper Remix handling
+        const formData = new FormData();
+        formData.append('action', 'delete_products');
+        formData.append('productIds', JSON.stringify(productsToDelete));
+
+        submit(formData, { method: 'post' });
     };
 
     const handleDeleteSelected = () => {
@@ -227,7 +559,16 @@ export default function CheckDuplicates() {
             shopify.toast.show("Please select products to delete", { isError: true });
             return;
         }
-        shopify.toast.show(`Deleting ${selectedProducts.length} selected products`);
+
+        const confirmation = confirm(`Are you sure you want to delete ${selectedProducts.length} selected products? This action cannot be undone.`);
+        if (!confirmation) return;
+
+        // Use useSubmit hook for proper Remix handling
+        const formData = new FormData();
+        formData.append('action', 'delete_products');
+        formData.append('productIds', JSON.stringify(selectedProducts));
+
+        submit(formData, { method: 'post' });
     };
 
     const handleProductSelection = (productId) => {
@@ -244,6 +585,10 @@ export default function CheckDuplicates() {
         } else {
             setSelectedProducts(duplicateProducts.map(p => p.id));
         }
+    };
+
+    const handleDismissBanner = (bannerId) => {
+        setDismissedBanners(prev => new Set([...prev, bannerId]));
     };
 
     // =============================================================================
@@ -1229,265 +1574,336 @@ export default function CheckDuplicates() {
                     subtitle="Delete duplicate products or variants by title, SKU, barcode, or a combination of these"
                 >
                     <BlockStack gap="500">
-                        {/* =============================================================================
-                                    STEP 1: SYNC PRODUCTS
-                                    ============================================================================= */}
-                        <Layout>
-                            <Layout.Section>
-                                <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
-                                    <BlockStack gap="400">
-                                        <Text as="p" variant="bodyMd">
-                                            <Text as="span" fontWeight="semibold">Step 1:</Text> Sync products for calculation of duplicate products and variants.
-                                        </Text>
+                        {/* Action Result Banners */}
+                        {actionData?.success && !dismissedBanners.has('success') && (
+                            <Banner
+                                title="Operation completed successfully!"
+                                tone="success"
+                                onDismiss={() => handleDismissBanner('success')}
+                            >
+                                {actionData.message}
+                            </Banner>
+                        )}
 
-                                        <div className="evergreen-button-wrapper evergreen-magnetic">
-                                            <Button
-                                                onClick={handleSyncProducts}
-                                                icon={RefreshIcon}
-                                                variant="primary"
-                                                size="slim"
-                                            >
-                                                Sync products
-                                            </Button>
-                                        </div>
-                                    </BlockStack>
-                                </Card>
-                            </Layout.Section>
-                        </Layout>
+                        {actionData?.error && !dismissedBanners.has('error') && (
+                            <Banner
+                                title="Operation failed"
+                                tone="critical"
+                                onDismiss={() => handleDismissBanner('error')}
+                            >
+                                {actionData.error}
+                            </Banner>
+                        )}
 
-                        {/* =============================================================================
-                                    STEP 2: SELECT DUPLICATE TYPE
-                                    ============================================================================= */}
-                        <Layout>
-                            <Layout.Section>
-                                <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
-                                    <BlockStack gap="400">
-                                        <Text as="p" variant="bodyMd">
-                                            <Text as="span" fontWeight="semibold">Step 2:</Text> Select a field to take action for duplicate products and variants.
-                                        </Text>
+                        {/* Scanning Progress Banner */}
+                        {isScanning && (
+                            <Banner
+                                title="Scanning in progress"
+                                tone="info"
+                            >
+                                Scanning products and analyzing duplicates... This may take a few moments.
+                            </Banner>
+                        )}
 
-                                        {/* Duplicate Cards Grid */}
-                                        <div style={{
-                                            display: "grid",
-                                            gridTemplateColumns: "repeat(3, 1fr)",
-                                            gap: "32px",
-                                            "@media (max-width: 768px)": {
-                                                gridTemplateColumns: "1fr"
-                                            }
-                                        }}>
-                                            {duplicateTypes.map((type) => {
-                                                const count = duplicateStats[type.key];
-                                                const isDisabled = count === 0;
-
-                                                return (
-                                                    <div key={type.key} className="evergreen-stats-card-wrapper">
-                                                        <Card className="evergreen-card evergreen-card-interactive evergreen-stats-card">
-                                                            <div className="evergreen-stats-content">
-                                                                <Text as="h3" variant="headingSm" fontWeight="semibold">
-                                                                    {type.label}
-                                                                </Text>
-                                                                <div className="evergreen-stats-number">
-                                                                    {count}
-                                                                </div>
-                                                                <div className="evergreen-button-wrapper-secondary evergreen-magnetic">
-                                                                    <Button
-                                                                        size="micro"
-                                                                        onClick={() => handleCheckOptions(type.action)}
-                                                                        disabled={isDisabled}
-                                                                    >
-                                                                        Check options
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        </Card>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </BlockStack>
-                                </Card>
-                            </Layout.Section>
-                        </Layout>
-
-                        {/* =============================================================================
-                                    STEP 3: BULK DELETE RULES
-                                    ============================================================================= */}
-                        <Layout>
-                            <Layout.Section>
-                                <div className="evergreen-step-container">
+                        {/* No Duplicates Section */}
+                        {hasNoDuplicates && (
+                            <Layout>
+                                <Layout.Section>
                                     <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
                                         <BlockStack gap="400">
-                                            <Text as="p" variant="bodyMd">
-                                                <Text as="span" fontWeight="semibold">Step 3:</Text> Choose a rule to delete duplicate products or variants in bulk.
-                                            </Text>
-
-                                            <div className="evergreen-warning-card">
-                                                <Text as="p" variant="bodyMd" fontWeight="medium" style={{ color: '#92400E' }}>
-                                                    This action can not be reverted. Please export your products before deleting them in bulk.
+                                            <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                                                <Text as="h2" variant="headingMd" fontWeight="semibold">
+                                                    No duplicates found
                                                 </Text>
-                                            </div>
-
-                                            <InlineStack gap="300" blockAlign="end">
-                                                <div className="evergreen-select-wrapper" style={{ minWidth: "300px" }}>
-                                                    <Select
-                                                        label=""
-                                                        options={ruleOptions}
-                                                        value={selectedRule}
-                                                        onChange={setSelectedRule}
-                                                        placeholder="Select a rule"
-                                                    />
+                                                <div style={{ marginTop: '1rem', marginBottom: '2rem' }}>
+                                                    <Text as="p" variant="bodyMd" tone="subdued">
+                                                        Great news! No duplicate products were found in your store. Your catalog is clean and organized.
+                                                    </Text>
                                                 </div>
-                                                <button
-                                                    className="evergreen-button-epic evergreen-magnetic"
-                                                    onClick={handleBulkDelete}
-                                                    disabled={!selectedRule}
-                                                    style={{
-                                                        opacity: selectedRule ? 1 : 0.6,
-                                                        cursor: selectedRule ? 'pointer' : 'not-allowed'
-                                                    }}
-                                                >
-                                                    Bulk delete
-                                                </button>
-                                            </InlineStack>
+                                                <div className="evergreen-button-wrapper evergreen-magnetic">
+                                                    <Button
+                                                        onClick={handleSyncProducts}
+                                                        icon={RefreshIcon}
+                                                        variant="primary"
+                                                        loading={isScanning}
+                                                        disabled={isScanning}
+                                                    >
+                                                        {isScanning ? "Scanning..." : "Run new scan"}
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </BlockStack>
                                     </Card>
-                                </div>
-                            </Layout.Section>
-                        </Layout>
+                                </Layout.Section>
+                            </Layout>
+                        )}
 
-                        {/* =============================================================================
+                        {/* Main Content - Only show if there are duplicates */}
+                        {!hasNoDuplicates && (
+                            <>
+                                {/* =============================================================================
+                                    STEP 1: SYNC PRODUCTS
+                                    ============================================================================= */}
+                                <Layout>
+                                    <Layout.Section>
+                                        <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
+                                            <BlockStack gap="400">
+                                                <Text as="p" variant="bodyMd">
+                                                    <Text as="span" fontWeight="semibold">Step 1:</Text> Sync products for calculation of duplicate products and variants.
+                                                </Text>
+
+                                                <div className="evergreen-button-wrapper evergreen-magnetic">
+                                                    <Button
+                                                        onClick={handleSyncProducts}
+                                                        icon={RefreshIcon}
+                                                        variant="primary"
+                                                        size="slim"
+                                                        loading={isScanning}
+                                                        disabled={isScanning}
+                                                    >
+                                                        {isScanning ? "Scanning..." : "Sync products"}
+                                                    </Button>
+                                                </div>
+                                            </BlockStack>
+                                        </Card>
+                                    </Layout.Section>
+                                </Layout>
+
+                                {/* =============================================================================
+                                    STEP 2: SELECT DUPLICATE TYPE
+                                    ============================================================================= */}
+                                <Layout>
+                                    <Layout.Section>
+                                        <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
+                                            <BlockStack gap="400">
+                                                <Text as="p" variant="bodyMd">
+                                                    <Text as="span" fontWeight="semibold">Step 2:</Text> Select a field to take action for duplicate products and variants.
+                                                </Text>
+
+                                                {/* Duplicate Cards Grid */}
+                                                <div style={{
+                                                    display: "grid",
+                                                    gridTemplateColumns: "repeat(3, 1fr)",
+                                                    gap: "32px",
+                                                    "@media (max-width: 768px)": {
+                                                        gridTemplateColumns: "1fr"
+                                                    }
+                                                }}>
+                                                    {duplicateTypes.map((type) => {
+                                                        const count = duplicateStats[type.key];
+                                                        const isDisabled = count === 0;
+
+                                                        return (
+                                                            <div key={type.key} className="evergreen-stats-card-wrapper">
+                                                                <Card className="evergreen-card evergreen-card-interactive evergreen-stats-card">
+                                                                    <div className="evergreen-stats-content">
+                                                                        <Text as="h3" variant="headingSm" fontWeight="semibold">
+                                                                            {type.label}
+                                                                        </Text>
+                                                                        <div className="evergreen-stats-number">
+                                                                            {count}
+                                                                        </div>
+                                                                        <div className="evergreen-button-wrapper-secondary evergreen-magnetic">
+                                                                            <Button
+                                                                                size="micro"
+                                                                                onClick={() => handleCheckOptions(type.action)}
+                                                                                disabled={isDisabled}
+                                                                            >
+                                                                                Check options
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                </Card>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </BlockStack>
+                                        </Card>
+                                    </Layout.Section>
+                                </Layout>
+
+                                {/* =============================================================================
+                                    STEP 3: BULK DELETE RULES
+                                    ============================================================================= */}
+                                <Layout>
+                                    <Layout.Section>
+                                        <div className="evergreen-step-container">
+                                            <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
+                                                <BlockStack gap="400">
+                                                    <Text as="p" variant="bodyMd">
+                                                        <Text as="span" fontWeight="semibold">Step 3:</Text> Choose a rule to delete duplicate products or variants in bulk.
+                                                    </Text>
+
+                                                    <div className="evergreen-warning-card">
+                                                        <Text as="p" variant="bodyMd" fontWeight="medium" style={{ color: '#92400E' }}>
+                                                            This action can not be reverted. Please export your products before deleting them in bulk.
+                                                        </Text>
+                                                    </div>
+
+                                                    <InlineStack gap="300" blockAlign="end">
+                                                        <div className="evergreen-select-wrapper" style={{ minWidth: "300px" }}>
+                                                            <Select
+                                                                label=""
+                                                                options={ruleOptions}
+                                                                value={selectedRule}
+                                                                onChange={setSelectedRule}
+                                                                placeholder="Select a rule"
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            className="evergreen-button-epic evergreen-magnetic"
+                                                            onClick={handleBulkDelete}
+                                                            disabled={!selectedRule}
+                                                            style={{
+                                                                opacity: selectedRule ? 1 : 0.6,
+                                                                cursor: selectedRule ? 'pointer' : 'not-allowed'
+                                                            }}
+                                                        >
+                                                            Bulk delete
+                                                        </button>
+                                                    </InlineStack>
+                                                </BlockStack>
+                                            </Card>
+                                        </div>
+                                    </Layout.Section>
+                                </Layout>
+
+                                {/* =============================================================================
                                     STEP 4: MANUAL SELECTION
                                     ============================================================================= */}
-                        <Layout>
-                            <Layout.Section>
-                                <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
-                                    <BlockStack gap="400">
-                                        <InlineStack align="space-between" blockAlign="center">
-                                            <Text as="p" variant="bodyMd">
-                                                <Text as="span" fontWeight="semibold">Step 4:</Text> You can also select products or variants to delete manually.
-                                            </Text>
-                                            <button
-                                                className="evergreen-button-epic evergreen-magnetic"
-                                                onClick={handleDeleteSelected}
-                                                disabled={selectedProducts.length === 0}
-                                                style={{
-                                                    opacity: selectedProducts.length > 0 ? 1 : 0.6,
-                                                    cursor: selectedProducts.length > 0 ? 'pointer' : 'not-allowed'
-                                                }}
-                                            >
-                                                Delete selected ({selectedProducts.length})
-                                            </button>
-                                        </InlineStack>
+                                <Layout>
+                                    <Layout.Section>
+                                        <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
+                                            <BlockStack gap="400">
+                                                <InlineStack align="space-between" blockAlign="center">
+                                                    <Text as="p" variant="bodyMd">
+                                                        <Text as="span" fontWeight="semibold">Step 4:</Text> You can also select products or variants to delete manually.
+                                                    </Text>
+                                                    <button
+                                                        className="evergreen-button-epic evergreen-magnetic"
+                                                        onClick={handleDeleteSelected}
+                                                        disabled={selectedProducts.length === 0}
+                                                        style={{
+                                                            opacity: selectedProducts.length > 0 ? 1 : 0.6,
+                                                            cursor: selectedProducts.length > 0 ? 'pointer' : 'not-allowed'
+                                                        }}
+                                                    >
+                                                        Delete selected ({selectedProducts.length})
+                                                    </button>
+                                                </InlineStack>
 
-                                        {/* Products Table */}
-                                        <div style={{ overflowX: "auto" }}>
-                                            <div className="evergreen-product-table">
-                                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                                    <thead className="evergreen-table-header">
-                                                        <tr>
-                                                            <th>
-                                                                <div className="evergreen-epic-checkbox">
-                                                                    <Checkbox
-                                                                        checked={selectedProducts.length === duplicateProducts.length && duplicateProducts.length > 0}
-                                                                        indeterminate={selectedProducts.length > 0 && selectedProducts.length < duplicateProducts.length}
-                                                                        onChange={handleSelectAllProducts}
-                                                                    />
-                                                                </div>
-                                                            </th>
-                                                            <th>
-                                                                <Text as="span" variant="bodyMd" fontWeight="semibold">Image</Text>
-                                                            </th>
-                                                            <th>
-                                                                <Text as="span" variant="bodyMd" fontWeight="semibold">Type</Text>
-                                                            </th>
-                                                            <th>
-                                                                <Text as="span" variant="bodyMd" fontWeight="semibold">Title</Text>
-                                                            </th>
-                                                            <th>
-                                                                <Text as="span" variant="bodyMd" fontWeight="semibold">SKU</Text>
-                                                            </th>
-                                                            <th>
-                                                                <Text as="span" variant="bodyMd" fontWeight="semibold">Barcode</Text>
-                                                            </th>
-                                                            <th>
-                                                                <Text as="span" variant="bodyMd" fontWeight="semibold">Price</Text>
-                                                            </th>
-                                                            <th>
-                                                                <Text as="span" variant="bodyMd" fontWeight="semibold">Status</Text>
-                                                            </th>
-                                                            <th>
-                                                                <Text as="span" variant="bodyMd" fontWeight="semibold">Created at</Text>
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {duplicateProducts.map((product, index) => (
-                                                            <tr
-                                                                key={product.id}
-                                                                className="evergreen-product-row evergreen-table-row-entrance"
-                                                                style={{ animationDelay: `${index * 100}ms` }}
-                                                            >
-                                                                <td>
-                                                                    <div className="evergreen-epic-checkbox">
-                                                                        <Checkbox
-                                                                            checked={selectedProducts.includes(product.id)}
-                                                                            onChange={() => handleProductSelection(product.id)}
-                                                                        />
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div className="evergreen-product-image">
-                                                                        <Thumbnail
-                                                                            size="small"
-                                                                            source={product.image}
-                                                                            alt={product.title}
-                                                                        />
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <Text as="span" variant="bodyMd">{product.type}</Text>
-                                                                </td>
-                                                                <td>
-                                                                    <div className="evergreen-product-title">
-                                                                        <Text as="span" variant="bodyMd" tone="base">
-                                                                            {product.title}
-                                                                        </Text>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <Text as="span" variant="bodyMd">{product.sku || "-"}</Text>
-                                                                </td>
-                                                                <td>
-                                                                    <Text as="span" variant="bodyMd">{product.barcode || "-"}</Text>
-                                                                </td>
-                                                                <td>
-                                                                    <div className="evergreen-price-text">
-                                                                        <Text as="span" variant="bodyMd">{product.price}</Text>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <Badge
-                                                                        className={`evergreen-status-badge status-${product.status.toLowerCase()}`}
-                                                                        status={product.status === "ACTIVE" ? "success" : "info"}
+                                                {/* Products Table */}
+                                                <div style={{ overflowX: "auto" }}>
+                                                    <div className="evergreen-product-table">
+                                                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                                            <thead className="evergreen-table-header">
+                                                                <tr>
+                                                                    <th>
+                                                                        <div className="evergreen-epic-checkbox">
+                                                                            <Checkbox
+                                                                                checked={selectedProducts.length === duplicateProducts.length && duplicateProducts.length > 0}
+                                                                                indeterminate={selectedProducts.length > 0 && selectedProducts.length < duplicateProducts.length}
+                                                                                onChange={handleSelectAllProducts}
+                                                                            />
+                                                                        </div>
+                                                                    </th>
+                                                                    <th>
+                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Image</Text>
+                                                                    </th>
+                                                                    <th>
+                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Type</Text>
+                                                                    </th>
+                                                                    <th>
+                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Title</Text>
+                                                                    </th>
+                                                                    <th>
+                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">SKU</Text>
+                                                                    </th>
+                                                                    <th>
+                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Barcode</Text>
+                                                                    </th>
+                                                                    <th>
+                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Price</Text>
+                                                                    </th>
+                                                                    <th>
+                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Status</Text>
+                                                                    </th>
+                                                                    <th>
+                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Created at</Text>
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {duplicateProducts.map((product, index) => (
+                                                                    <tr
+                                                                        key={product.id}
+                                                                        className="evergreen-product-row evergreen-table-row-entrance"
+                                                                        style={{ animationDelay: `${index * 100}ms` }}
                                                                     >
-                                                                        {product.status}
-                                                                    </Badge>
-                                                                </td>
-                                                                <td>
-                                                                    <Text as="span" variant="bodyMd" tone="subdued">
-                                                                        {product.createdAt}
-                                                                    </Text>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </BlockStack>
-                                </Card>
-                            </Layout.Section>
-                        </Layout>
+                                                                        <td>
+                                                                            <div className="evergreen-epic-checkbox">
+                                                                                <Checkbox
+                                                                                    checked={selectedProducts.includes(product.id)}
+                                                                                    onChange={() => handleProductSelection(product.id)}
+                                                                                />
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div className="evergreen-product-image">
+                                                                                <Thumbnail
+                                                                                    size="small"
+                                                                                    source={product.image}
+                                                                                    alt={product.title}
+                                                                                />
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <Text as="span" variant="bodyMd">{product.type}</Text>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div className="evergreen-product-title">
+                                                                                <Text as="span" variant="bodyMd" tone="base">
+                                                                                    {product.title}
+                                                                                </Text>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <Text as="span" variant="bodyMd">{product.sku || "-"}</Text>
+                                                                        </td>
+                                                                        <td>
+                                                                            <Text as="span" variant="bodyMd">{product.barcode || "-"}</Text>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div className="evergreen-price-text">
+                                                                                <Text as="span" variant="bodyMd">{product.price}</Text>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <Badge
+                                                                                className={`evergreen-status-badge status-${product.status.toLowerCase()}`}
+                                                                                status={product.status === "ACTIVE" ? "success" : "info"}
+                                                                            >
+                                                                                {product.status}
+                                                                            </Badge>
+                                                                        </td>
+                                                                        <td>
+                                                                            <Text as="span" variant="bodyMd" tone="subdued">
+                                                                                {product.createdAt}
+                                                                            </Text>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </BlockStack>
+                                        </Card>
+                                    </Layout.Section>
+                                </Layout>
+                            </>
+                        )}
                     </BlockStack>
                 </Page>
             </div>

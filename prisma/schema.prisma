@@ -30,3 +30,58 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+model DuplicateGroup {
+  id          String   @id @default(cuid())
+  shop        String
+  rule        String   // 'title', 'sku', 'barcode', 'title_sku', 'title_barcode', 'sku_barcode'
+  productIds  String   // JSON array of product IDs
+  similarity  Float?   // Similarity score (0-1)
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([shop, resolved])
+  @@index([shop, rule])
+}
+
+model ProductBackup {
+  id          String   @id @default(cuid())
+  shop        String
+  productId   String   // Shopify Product ID
+  productData String   // JSON backup of entire product
+  reason      String   // Why it was backed up
+  operation   String   // 'delete', 'merge', etc.
+  createdAt   DateTime @default(now())
+
+  @@index([shop, productId])
+}
+
+model ScanSession {
+  id            String   @id @default(cuid())
+  shop          String
+  status        String   // 'running', 'completed', 'failed', 'cancelled'
+  totalProducts Int      @default(0)
+  scannedProducts Int    @default(0)
+  duplicatesFound Int    @default(0)
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
+  errorMessage  String?
+
+  @@index([shop, status])
+}
+
+model DuplicateStats {
+  id                   String   @id @default(cuid())
+  shop                 String   @unique
+  byTitle              Int      @default(0)
+  bySku                Int      @default(0)
+  byBarcode            Int      @default(0)
+  byTitleSku           Int      @default(0)
+  byTitleBarcode       Int      @default(0)
+  bySkuBarcode         Int      @default(0)
+  totalProductsScanned Int      @default(0)
+  lastScanAt           DateTime?
+  updatedAt            DateTime @updatedAt
+}
