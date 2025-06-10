@@ -3,7 +3,7 @@
 client_id = "d856d539a212141f2921b1a1086bb1d6"
 name = "DC Echo Eraser"
 handle = "dc-echo-eraser"
-application_url = "https://showers-relationships-segments-area.trycloudflare.com"
+application_url = "https://familiar-se-cylinder-train.trycloudflare.com"
 embedded = true
 
 [build]
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://showers-relationships-segments-area.trycloudflare.com/auth/callback",
-  "https://showers-relationships-segments-area.trycloudflare.com/auth/shopify/callback",
-  "https://showers-relationships-segments-area.trycloudflare.com/api/auth/callback"
+  "https://familiar-se-cylinder-train.trycloudflare.com/auth/callback",
+  "https://familiar-se-cylinder-train.trycloudflare.com/auth/shopify/callback",
+  "https://familiar-se-cylinder-train.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

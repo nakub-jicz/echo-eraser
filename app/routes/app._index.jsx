@@ -14,11 +14,9 @@ import {
   Button,
   BlockStack,
   InlineStack,
-  ProgressBar,
   Icon,
   Badge,
   Grid,
-  CalloutCard,
   EmptyState,
   Banner,
   Spinner,
@@ -511,7 +509,6 @@ export default function Index() {
       <style>
         {`
       /* Evergreen Interface Kit Enhanced Styles */
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
       
       :root {
         --mouse-x: 0px;
@@ -519,7 +516,7 @@ export default function Index() {
       }
       
       .evergreen-page {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'San Francisco', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'San Francisco', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
         background-color: #F9FAFB;
         min-height: 100vh;
         position: relative;
