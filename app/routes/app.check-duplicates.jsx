@@ -643,7 +643,7 @@ export default function CheckDuplicates() {
                 
                 /* Steps container centering */
                 .Polaris-BlockStack {
-                    max-width: 900px;
+                    max-width: 1100px;
                     margin: 0 auto;
                     width: 100%;
                 }
@@ -664,16 +664,16 @@ export default function CheckDuplicates() {
                 /* Force all cards to have same width */
                 .Polaris-Layout__Section > .Polaris-Card {
                     width: 100%;
-                    min-width: 800px;
-                    max-width: 800px;
+                    min-width: 1000px;
+                    max-width: 1000px;
                     flex: none;
                 }
                 
                 /* Enhanced step card centering */
                 .evergreen-card {
                     width: 100% !important;
-                    min-width: 800px !important;
-                    max-width: 800px !important;
+                    min-width: 1000px !important;
+                    max-width: 1000px !important;
                     margin: 0 auto;
                     background: #FFFFFF;
                     border: 1px solid #E5E7EB;
@@ -688,8 +688,8 @@ export default function CheckDuplicates() {
                 /* Ensure consistent card structure */
                 .Polaris-Card {
                     width: 100% !important;
-                    min-width: 800px !important;
-                    max-width: 800px !important;
+                    min-width: 1000px !important;
+                    max-width: 1000px !important;
                     flex: none !important;
                     margin: 0 auto !important;
                 }
@@ -1689,7 +1689,7 @@ export default function CheckDuplicates() {
                             /* Enhanced card consistency - all same width */
                             .evergreen-card {
                                 width: 100%;
-                                max-width: 800px;
+                                max-width: 1000px;
                                 margin: 0 auto;
                                 background: #FFFFFF;
                                 border: 1px solid #E5E7EB;
@@ -2093,6 +2093,52 @@ export default function CheckDuplicates() {
                                 background-clip: text;
                             }
                             
+                            /* Fallback for browsers without :has() support */
+                            .Polaris-Button[disabled] {
+                                opacity: 0.5 !important;
+                                cursor: not-allowed !important;
+                                pointer-events: none !important;
+                            }
+                            
+                            .evergreen-button-wrapper-secondary:has(.Polaris-Button[disabled]) {
+                                opacity: 0.6 !important;
+                                filter: grayscale(0.3) !important;
+                                pointer-events: none !important;
+                            }
+                            
+                            /* Force disabled state visually */
+                            .evergreen-stats-card-wrapper .Polaris-Button[disabled],
+                            .evergreen-button-wrapper-secondary .Polaris-Button[disabled] {
+                                background: #F3F4F6 !important;
+                                color: #9CA3AF !important;
+                                border-color: #E5E7EB !important;
+                                opacity: 0.6 !important;
+                                cursor: not-allowed !important;
+                            }
+                            
+                            /* Disabled cards with class-based selectors */
+                            .evergreen-stats-card-wrapper.disabled {
+                                opacity: 0.6;
+                                filter: grayscale(0.3);
+                                pointer-events: none;
+                            }
+                            
+                            .evergreen-stats-number.disabled {
+                                color: #9CA3AF !important;
+                                background: linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%);
+                                -webkit-background-clip: text;
+                                -webkit-text-fill-color: transparent;
+                                background-clip: text;
+                            }
+                            
+                            .evergreen-button-wrapper-secondary.disabled {
+                                opacity: 0.6;
+                                filter: grayscale(0.3);
+                                pointer-events: none;
+                                background: #F3F4F6 !important;
+                                border-color: #E5E7EB !important;
+                            }
+                            
                             /* Grid wave effect */
                             .evergreen-duplicate-grid {
                                 display: grid;
@@ -2489,18 +2535,36 @@ export default function CheckDuplicates() {
                                                 padding: 0 2rem;
                                             }
                                             
-                                            /* Step wrapper for consistent spacing */
-                                            .evergreen-step-wrapper {
-                                                width: 100%;
-                                                max-width: 800px;
-                                                margin: 0 auto 2rem auto;
-                                            }
-                                            
-                                            /* Banner centering */
-                                            .Polaris-Banner {
-                                                max-width: 800px;
-                                                margin: 0 auto 1.5rem auto;
-                                            }
+                                                                        /* Step wrapper for consistent spacing */
+                            .evergreen-step-wrapper {
+                                width: 100%;
+                                max-width: 1000px;
+                                margin: 0 auto 2rem auto;
+                            }
+                            
+                            /* Banner centering and width */
+                            .Polaris-Banner {
+                                width: 100%;
+                                max-width: 1000px;
+                                margin: 0 auto 1.5rem auto;
+                            }
+                            
+                            /* Force banner container to center properly */
+                            .evergreen-steps-container > .Polaris-BlockStack > .Polaris-Banner {
+                                width: 100%;
+                                max-width: 1000px;
+                                margin: 0 auto 1.5rem auto;
+                            }
+                            
+                            /* Target all banner types specifically */
+                            .evergreen-page .Polaris-Banner,
+                            .evergreen-page .Polaris-Banner--success,
+                            .evergreen-page .Polaris-Banner--critical,
+                            .evergreen-page .Polaris-Banner--info {
+                                width: 100% !important;
+                                max-width: 1000px !important;
+                                margin: 0 auto 1.5rem auto !important;
+                            }
                                             
                                             /* Responsive centering */
                                             @media (max-width: 768px) {
@@ -2532,47 +2596,47 @@ export default function CheckDuplicates() {
                                                 }
                                             }
                                             
-                                            @media (min-width: 769px) {
-                                                /* Desktop - force exact same width for all cards */
-                                                .evergreen-card,
-                                                .Polaris-Card,
-                                                .Polaris-Layout__Section > .Polaris-Card {
-                                                    width: 800px !important;
-                                                    min-width: 800px !important;
-                                                    max-width: 800px !important;
-                                                    flex: none !important;
-                                                }
-                                            }
+                                                                        @media (min-width: 769px) {
+                                /* Desktop - force exact same width for all cards */
+                                .evergreen-card,
+                                .Polaris-Card,
+                                .Polaris-Layout__Section > .Polaris-Card {
+                                    width: 1000px !important;
+                                    min-width: 1000px !important;
+                                    max-width: 1000px !important;
+                                    flex: none !important;
+                                }
+                            }
                                             
                                             /* AGGRESSIVE POLARIS OVERRIDE - Force all cards to exact same width */
                                             
-                                            /* Override all possible Polaris card classes */
-                                            .Polaris-Page .Polaris-Layout .Polaris-Layout__Section .Polaris-Card {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                                flex: 0 0 800px !important;
-                                                flex-grow: 0 !important;
-                                                flex-shrink: 0 !important;
-                                                flex-basis: 800px !important;
-                                            }
+                                                                        /* Override all possible Polaris card classes */
+                            .Polaris-Page .Polaris-Layout .Polaris-Layout__Section .Polaris-Card {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                                flex: 0 0 1000px !important;
+                                flex-grow: 0 !important;
+                                flex-shrink: 0 !important;
+                                flex-basis: 1000px !important;
+                            }
                                             
-                                            /* Target the exact card selector hierarchy */
-                                            .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                                flex: 0 0 800px !important;
-                                            }
+                                                                        /* Target the exact card selector hierarchy */
+                            .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                                flex: 0 0 1000px !important;
+                            }
                                             
-                                            /* Override any possible Polaris width classes */
-                                            .Polaris-Card[class*="width"],
-                                            .Polaris-Card[style*="width"],
-                                            .Polaris-Layout__Section[class*="width"] > .Polaris-Card {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                            }
+                                                                        /* Override any possible Polaris width classes */
+                            .Polaris-Card[class*="width"],
+                            .Polaris-Card[style*="width"],
+                            .Polaris-Layout__Section[class*="width"] > .Polaris-Card {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                            }
                                             
                                             /* Force Layout Section to not affect card width */
                                             .Polaris-Layout__Section {
@@ -2583,12 +2647,12 @@ export default function CheckDuplicates() {
                                                 justify-content: center !important;
                                             }
                                             
-                                            .Polaris-Layout__Section > * {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                                flex: none !important;
-                                            }
+                                                                        .Polaris-Layout__Section > * {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                                flex: none !important;
+                            }
                                             
                                             /* Override BlockStack that might affect spacing */
                                             .Polaris-BlockStack > .Polaris-Layout {
@@ -2602,19 +2666,19 @@ export default function CheckDuplicates() {
                                                 justify-content: center !important;
                                             }
                                             
-                                            .Polaris-BlockStack > .Polaris-Layout > .Polaris-Layout__Section > .Polaris-Card {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                                flex: 0 0 800px !important;
-                                            }
+                                                                        .Polaris-BlockStack > .Polaris-Layout > .Polaris-Layout__Section > .Polaris-Card {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                                flex: 0 0 1000px !important;
+                            }
                                             
-                                            /* Nuclear option - target any div that might be a card */
-                                            .evergreen-page [class*="Card"] {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                            }
+                                                                        /* Nuclear option - target any div that might be a card */
+                            .evergreen-page [class*="Card"] {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                            }
                                             
                                             /* Responsive for mobile */
                                             @media (max-width: 768px) {
@@ -2629,62 +2693,62 @@ export default function CheckDuplicates() {
                                                 }
                                             }
                                             
-                                            /* ULTIMATE OVERRIDE - Maximum specificity with inline style priority */
-                                            html body .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card[style] {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                                flex: none !important;
-                                                flex-grow: 0 !important;
-                                                flex-shrink: 0 !important; 
-                                                flex-basis: 800px !important;
-                                            }
+                                                                        /* ULTIMATE OVERRIDE - Maximum specificity with inline style priority */
+                            html body .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card[style] {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                                flex: none !important;
+                                flex-grow: 0 !important;
+                                flex-shrink: 0 !important; 
+                                flex-basis: 1000px !important;
+                            }
                                             
-                                            /* Target any possible Polaris responsive breakpoints */
-                                            @media (min-width: 769px) {
-                                                html body .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card[style] {
-                                                    width: 800px !important;
-                                                    min-width: 800px !important;
-                                                    max-width: 800px !important;
-                                                    flex: none !important;
-                                                }
-                                            }
+                                                                        /* Target any possible Polaris responsive breakpoints */
+                            @media (min-width: 769px) {
+                                html body .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card[style] {
+                                    width: 1000px !important;
+                                    min-width: 1000px !important;
+                                    max-width: 1000px !important;
+                                    flex: none !important;
+                                }
+                            }
+                            
+                            @media (min-width: 990px) {
+                                html body .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card[style] {
+                                    width: 1000px !important;
+                                    min-width: 1000px !important;
+                                    max-width: 1000px !important;
+                                    flex: none !important;
+                                }
+                            }
+                            
+                            @media (min-width: 1200px) {
+                                html body .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card[style] {
+                                    width: 1000px !important;
+                                    min-width: 1000px !important;
+                                    max-width: 1000px !important;
+                                    flex: none !important;
+                                }
+                            }
                                             
-                                            @media (min-width: 990px) {
-                                                html body .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card[style] {
-                                                    width: 800px !important;
-                                                    min-width: 800px !important;
-                                                    max-width: 800px !important;
-                                                    flex: none !important;
-                                                }
-                                            }
-                                            
-                                            @media (min-width: 1200px) {
-                                                html body .evergreen-page .Polaris-Page .Polaris-BlockStack .Polaris-Layout .Polaris-Layout__Section .Polaris-Card[style] {
-                                                    width: 800px !important;
-                                                    min-width: 800px !important;
-                                                    max-width: 800px !important;
-                                                    flex: none !important;
-                                                }
-                                            }
-                                            
-                                            /* Override any possible Polaris class combinations */
-                                            .Polaris-Card.Polaris-Card--subdued,
-                                            .Polaris-Card.Polaris-Card--fullHeight,
-                                            .Polaris-Card[class*="Polaris"] {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                                flex: none !important;
-                                            }
-                                            
-                                            /* Force override of any computed styles */
-                                            [data-polaris-card] {
-                                                width: 800px !important;
-                                                min-width: 800px !important;
-                                                max-width: 800px !important;
-                                                flex: none !important;
-                                            }
+                                                                        /* Override any possible Polaris class combinations */
+                            .Polaris-Card.Polaris-Card--subdued,
+                            .Polaris-Card.Polaris-Card--fullHeight,
+                            .Polaris-Card[class*="Polaris"] {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                                flex: none !important;
+                            }
+                            
+                            /* Force override of any computed styles */
+                            [data-polaris-card] {
+                                width: 1000px !important;
+                                min-width: 1000px !important;
+                                max-width: 1000px !important;
+                                flex: none !important;
+                            }
                                         `}</style>
 
             <div className="evergreen-page">
@@ -2769,7 +2833,6 @@ export default function CheckDuplicates() {
                                         <Layout.Section>
                                             <Card
                                                 className="evergreen-card evergreen-card-interactive evergreen-animation-entrance"
-                                                style={{ width: '800px', minWidth: '800px', maxWidth: '800px', flex: 'none' }}
                                             >
                                                 <BlockStack gap="0">
                                                     <div
@@ -2820,7 +2883,6 @@ export default function CheckDuplicates() {
                                         <Layout.Section>
                                             <Card
                                                 className="evergreen-card evergreen-card-interactive evergreen-animation-entrance"
-                                                style={{ width: '800px', minWidth: '800px', maxWidth: '800px', flex: 'none' }}
                                             >
                                                 <BlockStack gap="0">
                                                     <div
@@ -2852,19 +2914,19 @@ export default function CheckDuplicates() {
                                                                     const isDisabled = count === 0;
 
                                                                     return (
-                                                                        <div key={type.key} className="evergreen-stats-card-wrapper">
+                                                                        <div key={type.key} className={`evergreen-stats-card-wrapper ${isDisabled ? 'disabled' : ''}`}>
                                                                             <Card className="evergreen-card evergreen-card-interactive evergreen-stats-card">
                                                                                 <div className="evergreen-stats-content">
                                                                                     <Text as="h3" variant="headingSm" fontWeight="semibold">
                                                                                         {type.label}
                                                                                     </Text>
-                                                                                    <div className="evergreen-stats-number">
+                                                                                    <div className={`evergreen-stats-number ${isDisabled ? 'disabled' : ''}`}>
                                                                                         {count}
                                                                                     </div>
-                                                                                    <div className="evergreen-button-wrapper-secondary evergreen-magnetic">
+                                                                                    <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${isDisabled ? 'disabled' : ''}`}>
                                                                                         <Button
                                                                                             size="micro"
-                                                                                            onClick={() => handleCheckOptions(type.action)}
+                                                                                            onClick={() => !isDisabled && handleCheckOptions(type.action)}
                                                                                             disabled={isDisabled}
                                                                                         >
                                                                                             Check options
@@ -2890,7 +2952,6 @@ export default function CheckDuplicates() {
                                         <Layout.Section>
                                             <Card
                                                 className="evergreen-card evergreen-card-interactive evergreen-animation-entrance"
-                                                style={{ width: '800px', minWidth: '800px', maxWidth: '800px', flex: 'none' }}
                                             >
                                                 <BlockStack gap="0">
                                                     <div
@@ -2957,7 +3018,6 @@ export default function CheckDuplicates() {
                                         <Layout.Section>
                                             <Card
                                                 className="evergreen-card evergreen-card-interactive evergreen-animation-entrance"
-                                                style={{ width: '800px', minWidth: '800px', maxWidth: '800px', flex: 'none' }}
                                             >
                                                 <BlockStack gap="0">
                                                     <div
