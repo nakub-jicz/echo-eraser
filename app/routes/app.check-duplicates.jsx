@@ -346,6 +346,9 @@ export default function CheckDuplicates() {
         bySkuBarcode: stats?.bySkuBarcode || 0
     };
 
+    // Step 2 state - selected duplicate type option
+    const [selectedDuplicateType, setSelectedDuplicateType] = useState(null);
+
     // Step 3 state
     const [selectedRule, setSelectedRule] = useState("");
 
@@ -524,7 +527,12 @@ export default function CheckDuplicates() {
     };
 
     const handleCheckOptions = (type) => {
-        setSelectedRule(type);
+        // Toggle functionality - if same type clicked, deselect it
+        if (selectedDuplicateType === type) {
+            setSelectedDuplicateType(null);
+        } else {
+            setSelectedDuplicateType(type);
+        }
     };
 
     // Navigate back to dashboard
@@ -538,16 +546,21 @@ export default function CheckDuplicates() {
             return;
         }
 
-        const confirmation = confirm(`Are you sure you want to delete all duplicates using rule: ${ruleOptions.find(r => r.value === selectedRule)?.label}? This action cannot be undone.`);
+        if (!selectedDuplicateType) {
+            shopify.toast.show("Please select a duplicate type first", { isError: true });
+            return;
+        }
+
+        const confirmation = confirm(`Are you sure you want to delete all ${selectedDuplicateType} duplicates using rule: ${ruleOptions.find(r => r.value === selectedRule)?.label}? This action cannot be undone.`);
         if (!confirmation) return;
 
-        // Get products matching the selected rule
+        // Get products matching the selected duplicate type and rule
         const productsToDelete = duplicateProducts
-            .filter(product => product.duplicateRule === selectedRule)
+            .filter(product => product.duplicateRule === selectedDuplicateType)
             .map(product => product.id);
 
         if (productsToDelete.length === 0) {
-            shopify.toast.show("No products found for the selected rule", { isError: true });
+            shopify.toast.show(`No ${selectedDuplicateType} duplicates found`, { isError: true });
             return;
         }
 
@@ -741,6 +754,26 @@ export default function CheckDuplicates() {
                     transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
                     box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.15);
                     cursor: pointer;
+                    width: auto;
+                    min-width: 100px;
+                    max-width: 140px;
+                }
+                
+                /* Responsive button wrapper */
+                @media (max-width: 768px) {
+                    .evergreen-button-wrapper-secondary {
+                        min-width: 90px;
+                        max-width: 120px;
+                        border-radius: 6px;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .evergreen-button-wrapper-secondary {
+                        min-width: 80px;
+                        max-width: 100px;
+                        border-radius: 4px;
+                    }
                 }
                 
                 .evergreen-button-wrapper-secondary .Polaris-Button {
@@ -754,6 +787,24 @@ export default function CheckDuplicates() {
                     position: relative;
                     z-index: 2;
                     font-size: 0.875rem !important;
+                    white-space: nowrap !important;
+                    overflow: visible !important;
+                    width: 100% !important;
+                }
+                
+                /* Responsive button sizing */
+                @media (max-width: 768px) {
+                    .evergreen-button-wrapper-secondary .Polaris-Button {
+                        padding: 6px 12px !important;
+                        font-size: 0.8rem !important;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .evergreen-button-wrapper-secondary .Polaris-Button {
+                        padding: 5px 10px !important;
+                        font-size: 0.75rem !important;
+                    }
                 }
                 
                 .evergreen-button-wrapper:hover {
@@ -834,7 +885,7 @@ export default function CheckDuplicates() {
                 .evergreen-stats-content {
                     text-align: center;
                     position: relative;
-                    min-height: 160px;
+                    min-height: 180px;
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
@@ -843,6 +894,21 @@ export default function CheckDuplicates() {
                     background: linear-gradient(135deg, #FFFFFF 0%, #FAFBFB 100%);
                     border-radius: 12px;
                     overflow: hidden;
+                }
+                
+                /* Responsive stats content */
+                @media (max-width: 768px) {
+                    .evergreen-stats-content {
+                        min-height: 160px;
+                        padding: 18px 14px;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .evergreen-stats-content {
+                        min-height: 140px;
+                        padding: 16px 12px;
+                    }
                 }
                 
                 .evergreen-stats-number {
@@ -858,6 +924,35 @@ export default function CheckDuplicates() {
                     transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
                     position: relative;
                     letter-spacing: -0.01em;
+                }
+                
+                /* Responsive stats number */
+                @media (max-width: 768px) {
+                    .evergreen-stats-number {
+                        font-size: 2rem;
+                        margin: 6px 0;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .evergreen-stats-number {
+                        font-size: 1.75rem;
+                        margin: 4px 0;
+                    }
+                }
+                
+                /* Responsive card titles */
+                @media (max-width: 768px) {
+                    .evergreen-stats-content .Polaris-Text {
+                        font-size: 0.875rem !important;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .evergreen-stats-content .Polaris-Text {
+                        font-size: 0.8rem !important;
+                        line-height: 1.2 !important;
+                    }
                 }
                 
                 .evergreen-magnetic {
@@ -1318,8 +1413,27 @@ export default function CheckDuplicates() {
                 /* Grid wave effect */
                 .evergreen-duplicate-grid {
                     display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 32px;
+                    grid-template-columns: repeat(3, minmax(200px, 1fr));
+                    gap: 24px;
+                    max-width: 800px;
+                    margin: 0 auto;
+                }
+                
+                /* Responsive grid for smaller screens */
+                @media (max-width: 900px) {
+                    .evergreen-duplicate-grid {
+                        grid-template-columns: repeat(2, minmax(180px, 1fr));
+                        gap: 20px;
+                        max-width: 600px;
+                    }
+                }
+                
+                @media (max-width: 550px) {
+                    .evergreen-duplicate-grid {
+                        grid-template-columns: 1fr;
+                        gap: 16px;
+                        max-width: 300px;
+                    }
                 }
                 
                 .evergreen-duplicate-grid .evergreen-stats-card-wrapper:nth-child(1) {
@@ -2139,11 +2253,58 @@ export default function CheckDuplicates() {
                                 border-color: #E5E7EB !important;
                             }
                             
+                            /* Selected state for cards */
+                            .evergreen-stats-card-wrapper.selected {
+                                transform: scale(1.02);
+                                box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2), 0 0 0 2px rgba(16, 185, 129, 0.3);
+                                background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+                                border-radius: 12px;
+                            }
+                            
+                            .evergreen-stats-card-wrapper.selected .evergreen-card {
+                                border: 2px solid #10B981;
+                                background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%);
+                            }
+                            
+                            .evergreen-stats-number.selected {
+                                color: #047857 !important;
+                                background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+                                -webkit-background-clip: text;
+                                -webkit-text-fill-color: transparent;
+                                background-clip: text;
+                                text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+                            }
+                            
+                            .evergreen-button-wrapper-secondary.selected {
+                                background: linear-gradient(120deg, #10B981 0%, #06B6D4 100%) !important;
+                                border: none !important;
+                                box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.25);
+                            }
+                            
                             /* Grid wave effect */
                             .evergreen-duplicate-grid {
                                 display: grid;
-                                grid-template-columns: repeat(3, 1fr);
-                                gap: 32px;
+                                grid-template-columns: repeat(3, minmax(200px, 1fr));
+                                gap: 24px;
+                                max-width: 800px;
+                                margin: 0 auto;
+                            }
+                            
+                            /* Responsive grid for smaller screens */
+                            @media (max-width: 900px) {
+                                .evergreen-duplicate-grid {
+                                    grid-template-columns: repeat(2, minmax(180px, 1fr));
+                                    gap: 20px;
+                                    max-width: 600px;
+                                }
+                            }
+                            
+                            @media (max-width: 550px) {
+                                .evergreen-duplicate-grid {
+                                    grid-template-columns: 1fr;
+                                    gap: 16px;
+                                    max-width: 300px;
+                                }
                             }
                             
                             .evergreen-duplicate-grid .evergreen-stats-card-wrapper:nth-child(1) {
@@ -2912,24 +3073,26 @@ export default function CheckDuplicates() {
                                                                 {duplicateTypes.map((type) => {
                                                                     const count = duplicateStats[type.key];
                                                                     const isDisabled = count === 0;
+                                                                    const isSelected = selectedDuplicateType === type.action;
 
                                                                     return (
-                                                                        <div key={type.key} className={`evergreen-stats-card-wrapper ${isDisabled ? 'disabled' : ''}`}>
+                                                                        <div key={type.key} className={`evergreen-stats-card-wrapper ${isDisabled ? 'disabled' : ''} ${isSelected ? 'selected' : ''}`}>
                                                                             <Card className="evergreen-card evergreen-card-interactive evergreen-stats-card">
                                                                                 <div className="evergreen-stats-content">
                                                                                     <Text as="h3" variant="headingSm" fontWeight="semibold">
                                                                                         {type.label}
                                                                                     </Text>
-                                                                                    <div className={`evergreen-stats-number ${isDisabled ? 'disabled' : ''}`}>
+                                                                                    <div className={`evergreen-stats-number ${isDisabled ? 'disabled' : ''} ${isSelected ? 'selected' : ''}`}>
                                                                                         {count}
                                                                                     </div>
-                                                                                    <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${isDisabled ? 'disabled' : ''}`}>
+                                                                                    <div className={`evergreen-button-wrapper-secondary evergreen-magnetic ${isDisabled ? 'disabled' : ''} ${isSelected ? 'selected' : ''}`}>
                                                                                         <Button
                                                                                             size="micro"
                                                                                             onClick={() => !isDisabled && handleCheckOptions(type.action)}
                                                                                             disabled={isDisabled}
+                                                                                            variant={isSelected ? "primary" : "secondary"}
                                                                                         >
-                                                                                            Check options
+                                                                                            {isSelected ? "Selected" : "Check options"}
                                                                                         </Button>
                                                                                     </div>
                                                                                 </div>
@@ -2946,230 +3109,256 @@ export default function CheckDuplicates() {
                                     </Layout>
 
                                     {/* =============================================================================
-                                                STEP 3: BULK DELETE RULES
+                                                STEP 3: BULK DELETE RULES - Only show if duplicate type is selected
                                                 ============================================================================= */}
-                                    <Layout>
-                                        <Layout.Section>
-                                            <Card
-                                                className="evergreen-card evergreen-card-interactive evergreen-animation-entrance"
-                                            >
-                                                <BlockStack gap="0">
-                                                    <div
-                                                        className="evergreen-step-header"
-                                                        onClick={() => toggleStepCollapse('step3')}
-                                                    >
-                                                        <div className="evergreen-step-title">
-                                                            <div className="evergreen-step-number">3</div>
-                                                            <Text as="p" variant="bodyMd" fontWeight="semibold">
-                                                                Choose a rule to delete duplicate products or variants in bulk
-                                                            </Text>
-                                                        </div>
-                                                        <div className="evergreen-step-toggle">
-                                                            <Icon source={collapsedSteps.has('step3') ? ChevronDownIcon : ChevronUpIcon} />
-                                                            <span>{collapsedSteps.has('step3') ? 'Show' : 'Hide'}</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className={`evergreen-step-content ${collapsedSteps.has('step3') ? 'collapsed' : 'expanded'}`}>
-                                                        <BlockStack gap="400">
-                                                            <Text as="p" variant="bodySm" tone="subdued">
-                                                                Use bulk deletion rules to automatically remove duplicates. Select a rule and all matching duplicates will be deleted according to your preference.
-                                                            </Text>
-
-                                                            <div className="evergreen-warning-card">
-                                                                <Text as="p" variant="bodyMd" fontWeight="medium" style={{ color: '#92400E' }}>
-                                                                    This action can not be reverted. Please export your products before deleting them in bulk.
+                                    {selectedDuplicateType && (
+                                        <Layout>
+                                            <Layout.Section>
+                                                <Card
+                                                    className="evergreen-card evergreen-card-interactive evergreen-animation-entrance"
+                                                >
+                                                    <BlockStack gap="0">
+                                                        <div
+                                                            className="evergreen-step-header"
+                                                            onClick={() => toggleStepCollapse('step3')}
+                                                        >
+                                                            <div className="evergreen-step-title">
+                                                                <div className="evergreen-step-number">3</div>
+                                                                <Text as="p" variant="bodyMd" fontWeight="semibold">
+                                                                    Choose a rule to delete duplicate products or variants in bulk
                                                                 </Text>
                                                             </div>
+                                                            <div className="evergreen-step-toggle">
+                                                                <Icon source={collapsedSteps.has('step3') ? ChevronDownIcon : ChevronUpIcon} />
+                                                                <span>{collapsedSteps.has('step3') ? 'Show' : 'Hide'}</span>
+                                                            </div>
+                                                        </div>
 
-                                                            <InlineStack gap="300" blockAlign="end">
-                                                                <div className="evergreen-select-wrapper" style={{ minWidth: "300px" }}>
-                                                                    <Select
-                                                                        label=""
-                                                                        options={ruleOptions}
-                                                                        value={selectedRule}
-                                                                        onChange={setSelectedRule}
-                                                                        placeholder="Select a rule"
-                                                                    />
+                                                        <div className={`evergreen-step-content ${collapsedSteps.has('step3') ? 'collapsed' : 'expanded'}`}>
+                                                            <BlockStack gap="400">
+                                                                <Text as="p" variant="bodySm" tone="subdued">
+                                                                    Use bulk deletion rules to automatically remove duplicates. Select a rule and all matching duplicates will be deleted according to your preference.
+                                                                </Text>
+
+                                                                <div className="evergreen-warning-card">
+                                                                    <Text as="p" variant="bodyMd" fontWeight="medium" style={{ color: '#92400E' }}>
+                                                                        This action can not be reverted. Please export your products before deleting them in bulk.
+                                                                    </Text>
                                                                 </div>
-                                                                <button
-                                                                    className="evergreen-button-epic evergreen-magnetic"
-                                                                    onClick={handleBulkDelete}
-                                                                    disabled={!selectedRule}
-                                                                    style={{
-                                                                        opacity: selectedRule ? 1 : 0.6,
-                                                                        cursor: selectedRule ? 'pointer' : 'not-allowed'
-                                                                    }}
-                                                                >
-                                                                    Bulk delete
-                                                                </button>
-                                                            </InlineStack>
-                                                        </BlockStack>
-                                                    </div>
-                                                </BlockStack>
-                                            </Card>
-                                        </Layout.Section>
-                                    </Layout>
+
+                                                                <InlineStack gap="300" blockAlign="end">
+                                                                    <div className="evergreen-select-wrapper" style={{ minWidth: "300px" }}>
+                                                                        <Select
+                                                                            label=""
+                                                                            options={ruleOptions}
+                                                                            value={selectedRule}
+                                                                            onChange={setSelectedRule}
+                                                                            placeholder="Select a rule"
+                                                                        />
+                                                                    </div>
+                                                                    <button
+                                                                        className="evergreen-button-epic evergreen-magnetic"
+                                                                        onClick={handleBulkDelete}
+                                                                        disabled={!selectedRule}
+                                                                        style={{
+                                                                            opacity: selectedRule ? 1 : 0.6,
+                                                                            cursor: selectedRule ? 'pointer' : 'not-allowed'
+                                                                        }}
+                                                                    >
+                                                                        Bulk delete
+                                                                    </button>
+                                                                </InlineStack>
+                                                            </BlockStack>
+                                                        </div>
+                                                    </BlockStack>
+                                                </Card>
+                                            </Layout.Section>
+                                        </Layout>
+                                    )}
+
+                                    {/* Information banner when no option is selected */}
+                                    {!selectedDuplicateType && (
+                                        <Layout>
+                                            <Layout.Section>
+                                                <Card className="evergreen-card evergreen-card-interactive evergreen-animation-entrance">
+                                                    <BlockStack gap="400">
+                                                        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                                                            <div style={{ marginBottom: '1rem' }}>
+                                                                <Text as="h3" variant="headingMd" fontWeight="semibold">
+                                                                    Select a duplicate type above
+                                                                </Text>
+                                                            </div>
+                                                            <Text as="p" variant="bodyMd" tone="subdued">
+                                                                Choose which criteria to use for identifying duplicates, then Step 3 and Step 4 will appear.
+                                                            </Text>
+                                                        </div>
+                                                    </BlockStack>
+                                                </Card>
+                                            </Layout.Section>
+                                        </Layout>
+                                    )}
 
                                     {/* =============================================================================
-                                                STEP 4: MANUAL SELECTION
+                                                STEP 4: MANUAL SELECTION - Only show if duplicate type is selected
                                                 ============================================================================= */}
-                                    <Layout>
-                                        <Layout.Section>
-                                            <Card
-                                                className="evergreen-card evergreen-card-interactive evergreen-animation-entrance"
-                                            >
-                                                <BlockStack gap="0">
-                                                    <div
-                                                        className="evergreen-step-header"
-                                                        onClick={() => toggleStepCollapse('step4')}
-                                                    >
-                                                        <div className="evergreen-step-title">
-                                                            <div className="evergreen-step-number">4</div>
-                                                            <Text as="p" variant="bodyMd" fontWeight="semibold">
-                                                                Select products or variants to delete manually
-                                                            </Text>
-                                                        </div>
-                                                        <div className="evergreen-step-toggle">
-                                                            <Icon source={collapsedSteps.has('step4') ? ChevronDownIcon : ChevronUpIcon} />
-                                                            <span>{collapsedSteps.has('step4') ? 'Show' : 'Hide'}</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className={`evergreen-step-content ${collapsedSteps.has('step4') ? 'collapsed' : 'expanded'}`}>
-                                                        <BlockStack gap="400">
-                                                            <Text as="p" variant="bodySm" tone="subdued">
-                                                                Review duplicate products and manually select which ones to delete. You have full control over which products to remove.
-                                                            </Text>
-
-                                                            <InlineStack align="space-between" blockAlign="center">
-                                                                <Text as="p" variant="bodyMd" fontWeight="medium">
-                                                                    Duplicate Products ({duplicateProducts.length})
+                                    {selectedDuplicateType && (
+                                        <Layout>
+                                            <Layout.Section>
+                                                <Card
+                                                    className="evergreen-card evergreen-card-interactive evergreen-animation-entrance"
+                                                >
+                                                    <BlockStack gap="0">
+                                                        <div
+                                                            className="evergreen-step-header"
+                                                            onClick={() => toggleStepCollapse('step4')}
+                                                        >
+                                                            <div className="evergreen-step-title">
+                                                                <div className="evergreen-step-number">4</div>
+                                                                <Text as="p" variant="bodyMd" fontWeight="semibold">
+                                                                    Select products or variants to delete manually
                                                                 </Text>
-                                                                <button
-                                                                    className="evergreen-button-epic evergreen-magnetic"
-                                                                    onClick={handleDeleteSelected}
-                                                                    disabled={selectedProducts.length === 0}
-                                                                    style={{
-                                                                        opacity: selectedProducts.length > 0 ? 1 : 0.6,
-                                                                        cursor: selectedProducts.length > 0 ? 'pointer' : 'not-allowed'
-                                                                    }}
-                                                                >
-                                                                    Delete selected ({selectedProducts.length})
-                                                                </button>
-                                                            </InlineStack>
+                                                            </div>
+                                                            <div className="evergreen-step-toggle">
+                                                                <Icon source={collapsedSteps.has('step4') ? ChevronDownIcon : ChevronUpIcon} />
+                                                                <span>{collapsedSteps.has('step4') ? 'Show' : 'Hide'}</span>
+                                                            </div>
+                                                        </div>
 
-                                                            {/* Products Table */}
-                                                            <div style={{ overflowX: "auto" }}>
-                                                                <div className="evergreen-product-table">
-                                                                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                                                        <thead className="evergreen-table-header">
-                                                                            <tr>
-                                                                                <th>
-                                                                                    <div className="evergreen-epic-checkbox">
-                                                                                        <Checkbox
-                                                                                            checked={selectedProducts.length === duplicateProducts.length && duplicateProducts.length > 0}
-                                                                                            indeterminate={selectedProducts.length > 0 && selectedProducts.length < duplicateProducts.length}
-                                                                                            onChange={handleSelectAllProducts}
-                                                                                        />
-                                                                                    </div>
-                                                                                </th>
-                                                                                <th>
-                                                                                    <Text as="span" variant="bodyMd" fontWeight="semibold">Image</Text>
-                                                                                </th>
-                                                                                <th>
-                                                                                    <Text as="span" variant="bodyMd" fontWeight="semibold">Type</Text>
-                                                                                </th>
-                                                                                <th>
-                                                                                    <Text as="span" variant="bodyMd" fontWeight="semibold">Title</Text>
-                                                                                </th>
-                                                                                <th>
-                                                                                    <Text as="span" variant="bodyMd" fontWeight="semibold">SKU</Text>
-                                                                                </th>
-                                                                                <th>
-                                                                                    <Text as="span" variant="bodyMd" fontWeight="semibold">Barcode</Text>
-                                                                                </th>
-                                                                                <th>
-                                                                                    <Text as="span" variant="bodyMd" fontWeight="semibold">Price</Text>
-                                                                                </th>
-                                                                                <th>
-                                                                                    <Text as="span" variant="bodyMd" fontWeight="semibold">Status</Text>
-                                                                                </th>
-                                                                                <th>
-                                                                                    <Text as="span" variant="bodyMd" fontWeight="semibold">Created at</Text>
-                                                                                </th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            {duplicateProducts.map((product, index) => (
-                                                                                <tr
-                                                                                    key={product.id}
-                                                                                    className="evergreen-product-row evergreen-table-row-entrance"
-                                                                                    style={{ animationDelay: `${index * 100}ms` }}
-                                                                                >
-                                                                                    <td>
+                                                        <div className={`evergreen-step-content ${collapsedSteps.has('step4') ? 'collapsed' : 'expanded'}`}>
+                                                            <BlockStack gap="400">
+                                                                <Text as="p" variant="bodySm" tone="subdued">
+                                                                    Review duplicate products and manually select which ones to delete. You have full control over which products to remove.
+                                                                </Text>
+
+                                                                <InlineStack align="space-between" blockAlign="center">
+                                                                    <Text as="p" variant="bodyMd" fontWeight="medium">
+                                                                        Duplicate Products ({duplicateProducts.length})
+                                                                    </Text>
+                                                                    <button
+                                                                        className="evergreen-button-epic evergreen-magnetic"
+                                                                        onClick={handleDeleteSelected}
+                                                                        disabled={selectedProducts.length === 0}
+                                                                        style={{
+                                                                            opacity: selectedProducts.length > 0 ? 1 : 0.6,
+                                                                            cursor: selectedProducts.length > 0 ? 'pointer' : 'not-allowed'
+                                                                        }}
+                                                                    >
+                                                                        Delete selected ({selectedProducts.length})
+                                                                    </button>
+                                                                </InlineStack>
+
+                                                                {/* Products Table */}
+                                                                <div style={{ overflowX: "auto" }}>
+                                                                    <div className="evergreen-product-table">
+                                                                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                                                            <thead className="evergreen-table-header">
+                                                                                <tr>
+                                                                                    <th>
                                                                                         <div className="evergreen-epic-checkbox">
                                                                                             <Checkbox
-                                                                                                checked={selectedProducts.includes(product.id)}
-                                                                                                onChange={() => handleProductSelection(product.id)}
+                                                                                                checked={selectedProducts.length === duplicateProducts.length && duplicateProducts.length > 0}
+                                                                                                indeterminate={selectedProducts.length > 0 && selectedProducts.length < duplicateProducts.length}
+                                                                                                onChange={handleSelectAllProducts}
                                                                                             />
                                                                                         </div>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <div className="evergreen-product-image">
-                                                                                            <Thumbnail
-                                                                                                size="small"
-                                                                                                source={product.image}
-                                                                                                alt={product.title}
-                                                                                            />
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <Text as="span" variant="bodyMd">{product.type}</Text>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <div className="evergreen-product-title">
-                                                                                            <Text as="span" variant="bodyMd" tone="base">
-                                                                                                {product.title}
-                                                                                            </Text>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <Text as="span" variant="bodyMd">{product.sku || "-"}</Text>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <Text as="span" variant="bodyMd">{product.barcode || "-"}</Text>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <div className="evergreen-price-text">
-                                                                                            <Text as="span" variant="bodyMd">{product.price}</Text>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <Badge
-                                                                                            className={`evergreen-status-badge status-${product.status.toLowerCase()}`}
-                                                                                            status={product.status === "ACTIVE" ? "success" : "info"}
-                                                                                        >
-                                                                                            {product.status}
-                                                                                        </Badge>
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <Text as="span" variant="bodyMd" tone="subdued">
-                                                                                            {product.createdAt}
-                                                                                        </Text>
-                                                                                    </td>
+                                                                                    </th>
+                                                                                    <th>
+                                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Image</Text>
+                                                                                    </th>
+                                                                                    <th>
+                                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Type</Text>
+                                                                                    </th>
+                                                                                    <th>
+                                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Title</Text>
+                                                                                    </th>
+                                                                                    <th>
+                                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">SKU</Text>
+                                                                                    </th>
+                                                                                    <th>
+                                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Barcode</Text>
+                                                                                    </th>
+                                                                                    <th>
+                                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Price</Text>
+                                                                                    </th>
+                                                                                    <th>
+                                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Status</Text>
+                                                                                    </th>
+                                                                                    <th>
+                                                                                        <Text as="span" variant="bodyMd" fontWeight="semibold">Created at</Text>
+                                                                                    </th>
                                                                                 </tr>
-                                                                            ))}
-                                                                        </tbody>
-                                                                    </table>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                {duplicateProducts.map((product, index) => (
+                                                                                    <tr
+                                                                                        key={product.id}
+                                                                                        className="evergreen-product-row evergreen-table-row-entrance"
+                                                                                        style={{ animationDelay: `${index * 100}ms` }}
+                                                                                    >
+                                                                                        <td>
+                                                                                            <div className="evergreen-epic-checkbox">
+                                                                                                <Checkbox
+                                                                                                    checked={selectedProducts.includes(product.id)}
+                                                                                                    onChange={() => handleProductSelection(product.id)}
+                                                                                                />
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <div className="evergreen-product-image">
+                                                                                                <Thumbnail
+                                                                                                    size="small"
+                                                                                                    source={product.image}
+                                                                                                    alt={product.title}
+                                                                                                />
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <Text as="span" variant="bodyMd">{product.type}</Text>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <div className="evergreen-product-title">
+                                                                                                <Text as="span" variant="bodyMd" tone="base">
+                                                                                                    {product.title}
+                                                                                                </Text>
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <Text as="span" variant="bodyMd">{product.sku || "-"}</Text>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <Text as="span" variant="bodyMd">{product.barcode || "-"}</Text>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <div className="evergreen-price-text">
+                                                                                                <Text as="span" variant="bodyMd">{product.price}</Text>
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <Badge
+                                                                                                className={`evergreen-status-badge status-${product.status.toLowerCase()}`}
+                                                                                                status={product.status === "ACTIVE" ? "success" : "info"}
+                                                                                            >
+                                                                                                {product.status}
+                                                                                            </Badge>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <Text as="span" variant="bodyMd" tone="subdued">
+                                                                                                {product.createdAt}
+                                                                                            </Text>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                ))}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </BlockStack>
-                                                    </div>
-                                                </BlockStack>
-                                            </Card>
-                                        </Layout.Section>
-                                    </Layout>
+                                                            </BlockStack>
+                                                        </div>
+                                                    </BlockStack>
+                                                </Card>
+                                            </Layout.Section>
+                                        </Layout>
+                                    )}
                                 </>
                             )}
                         </BlockStack>
