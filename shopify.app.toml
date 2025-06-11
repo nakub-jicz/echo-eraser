@@ -3,7 +3,7 @@
 client_id = "d856d539a212141f2921b1a1086bb1d6"
 name = "DC Echo Eraser"
 handle = "dc-echo-eraser"
-application_url = "https://bulk-claimed-transcription-me.trycloudflare.com"
+application_url = "https://traveler-society-advisor-horror.trycloudflare.com"
 embedded = true
 
 [build]
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://bulk-claimed-transcription-me.trycloudflare.com/auth/callback",
-  "https://bulk-claimed-transcription-me.trycloudflare.com/auth/shopify/callback",
-  "https://bulk-claimed-transcription-me.trycloudflare.com/api/auth/callback"
+  "https://traveler-society-advisor-horror.trycloudflare.com/auth/callback",
+  "https://traveler-society-advisor-horror.trycloudflare.com/auth/shopify/callback",
+  "https://traveler-society-advisor-horror.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
